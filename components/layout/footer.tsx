@@ -1,6 +1,6 @@
-import Link from "next/link";
+import Link from 'next/link'
 
-import { siteConfig } from "@/config/site";
+import { siteConfig } from '@/config/site'
 
 export function Footer() {
   return (
@@ -20,14 +20,11 @@ export function Footer() {
           <Link href="/notebook" className="transition hover:text-slate-950">
             Notebook
           </Link>
-          <a
-            href={`mailto:${siteConfig.email}`}
-            className="transition hover:text-slate-950"
-          >
+          <a href={`mailto:${siteConfig.email}`} className="transition hover:text-slate-950">
             {siteConfig.email}
           </a>
         </div>
       </div>
     </footer>
-  );
+  )
 }

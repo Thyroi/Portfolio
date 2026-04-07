@@ -1,20 +1,23 @@
 ---
-title: "John the Ripper — Guía práctica y referencia rápida (para DUMMIES)"
-description: "John the Ripper — Guía práctica y referencia rápida (para DUMMIES)"
-category: "Imported Documentation"
+title: 'John the Ripper — Guía práctica y referencia rápida (para DUMMIES)'
+description: 'John the Ripper — Guía práctica y referencia rápida (para DUMMIES)'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - johntheripper
 ---
+
 John the Ripper — Guía práctica y referencia rápida (para DUMMIES)
 
 Resumen rápido
+
 - John the Ripper (John) es una suite para romper contraseñas (password cracking). Existe la versión "core" y la versión "Jumbo" (con más formatos y soportes).
 - Usos típicos: romper hashes obtenidos (NTLM, NTLMv2/NetNTLM, UNIX /etc/shadow, hashes de Office/ZIP/PDF, etc.).
 - Palabras clave: "wordlist mode" (pruebas con lista), "rules" (transformaciones), "mask" (ataque dirigido / patrones), "incremental" (fuerza bruta inteligente).
 
 Instalación recomendada
+
 - En Kali/Parrot suelen venir preinstalados (john). Para soporte amplio (NetNTLMv2, formatos raros) instala John Jumbo:
 
 ```bash
@@ -27,36 +30,47 @@ cd john/src
 ```
 
 Formatos (comunes)
+
 - `NTLM` — hashes NTLM (NT hash) usados en SAM/Windows.
 - `NetNTLMv2` / `NetNTLM` — capturas de challenge/response (Responser/Responder output). Requiere John Jumbo en muchos casos.
 - `md5`, `sha1`, `bcrypt`, `descrypt`, `sha512crypt` — formatos UNIX y web.
 - Usa `john --list=formats` para ver los formatos disponibles en tu binario.
 
 Preparar el fichero de hashes
+
 - Si tienes un hash en texto (por ejemplo lo copiaste con `echo`), déjalo en un fichero, p.ej. `hashes.txt`.
 - Ejemplo NTLM simple (NT hash):
+
 ```bash
 echo 'aad3b435b51404eeaad3b435b51404ee:5d41402abc4b2a76b9719d911017c592' > ntlm.txt
 ```
+
 - Ejemplo NetNTLMv2 (captura desde Responder) — guarda la línea completa que aparece en los logs en `netntlm.txt`.
 
 Comandos básicos (modo palabra — rockyou)
+
 - Cracking simple con `rockyou.txt`:
+
 ```bash
 john --wordlist=/usr/share/wordlists/rockyou.txt --rules hashes.txt
 # alternativa corta:
 john -w:/usr/share/wordlists/rockyou.txt --rules hashes.txt
 ```
+
 - Mostrar contraseñas ya rotas:
+
 ```bash
 john --show hashes.txt
 ```
+
 - Probar sólo (benchmark):
+
 ```bash
 john --test
 ```
 
 Opciones y parámetros importantes (tabla rápida)
+
 - `-w:FILE` or `--wordlist=FILE`: usar `FILE` como wordlist (rockyou).
 - `--rules` or `-r`: aplicar reglas definidas en `john.conf` para generar variaciones.
 - `--format=NAME`: forzar formato (ej. `--format=NTLM`, `--format=NetNTLMv2`).
@@ -71,73 +85,94 @@ Opciones y parámetros importantes (tabla rápida)
 - `--fork=N`: paralelizar el trabajo en N procesos (útil en máquinas con varios núcleos).
 
 Ejemplos prácticos y consejos
-1) Ejecutar con `rockyou` y reglas (muy común):
+
+1. Ejecutar con `rockyou` y reglas (muy común):
+
 ```bash
 john -w:/usr/share/wordlists/rockyou.txt --rules hashes.txt
 ```
+
 - `--rules` aplica transformaciones (capitalización, añadir dígitos, sustituir caracteres, etc.).
 
-2) Usar formato específico (por ejemplo NetNTLMv2):
+2. Usar formato específico (por ejemplo NetNTLMv2):
+
 ```bash
 john --format=NetNTLMv2 -w:/usr/share/wordlists/rockyou.txt netntlm.txt
 ```
+
 - Nota: muchos formatos relacionados con NetNTLM requieren la versión Jumbo.
 
-3) Máscara para patrones conocidos (por ejemplo: 3 letras + 3 dígitos):
+3. Máscara para patrones conocidos (por ejemplo: 3 letras + 3 dígitos):
+
 ```bash
 john --mask='?l?l?l?d?d?d' hashes.txt
 ```
+
 - Las máscaras son mucho más rápidas que la fuerza bruta completa y útiles si conoces patrones.
 
-4) Incremental (fuerza bruta "inteligente"):
+4. Incremental (fuerza bruta "inteligente"):
+
 ```bash
 john --incremental hashes.txt
 ```
+
 - Es lento para contraseñas largas, pero efectivo en ausencia de wordlists.
 
-5) Paralelizar con `--fork` (cuando uses wordlist o incremental):
+5. Paralelizar con `--fork` (cuando uses wordlist o incremental):
+
 ```bash
 john --fork=4 -w:/usr/share/wordlists/rockyou.txt --rules hashes.txt
 ```
+
 - Usa con precaución; solo en sistemas donde `john` lo soporte.
 
-6) Usar `--stdout` + reglas para generar variantes y pasarlas a otra herramienta:
+6. Usar `--stdout` + reglas para generar variantes y pasarlas a otra herramienta:
+
 ```bash
 john -w:/usr/share/wordlists/rockyou.txt --rules --stdout | head -n 1000 > generated.txt
 ```
 
 Formatos especiales y utilidades auxiliares
+
 - `unshadow / unafs`: combinar `/etc/passwd` y `/etc/shadow` para crear fichero apto para John (`unshadow passwd shadow > unshadowed.txt`).
 - `zip2john`, `rar2john`, `pdf2john`: extraer hashes desde archivos comprimidos o documentos para que John los procese.
 
 Buenas prácticas
+
 - Empieza por `--wordlist` con reglas antes de pasar a incremental.
 - Usa máscaras cuando tengas información parcial (longitud, prefijos, sufijos).
 - Revisa `john.conf` para ver y entender las reglas por defecto.
 - Guarda sesiones con `--session` y usa `--restore` si necesitas parar y continuar.
 
 Ejemplo flujo (captura NetNTLMv2 → John)
-1) Guardas la línea del NetNTLMv2 en `netntlm.txt`.
-2) Intentas wordlist + reglas:
+
+1. Guardas la línea del NetNTLMv2 en `netntlm.txt`.
+2. Intentas wordlist + reglas:
+
 ```bash
 john --format=NetNTLMv2 -w:/usr/share/wordlists/rockyou.txt --rules netntlm.txt
 ```
-3) Si `john --show netntlm.txt` muestra la contraseña, úsala en servicios autorizados; si no, considera relay en vez de crack.
+
+3. Si `john --show netntlm.txt` muestra la contraseña, úsala en servicios autorizados; si no, considera relay en vez de crack.
 
 Limitaciones y alternativas
+
 - NetNTLMv2 es resistente: cracking offline suele ser lento/impráctico si la contraseña es compleja.
 - Para capturas NetNTLM muchas veces es preferible intentar RELAY (ntlmrelayx) que cracking.
 - Si John no soporta tu formato, prueba John Jumbo o usa `hashcat` (especialmente efectivo con GPUs).
 
 Seguridad y ética
+
 - Romper contraseñas solo en entornos autorizados y de forma responsable.
 - Borra o protege los ficheros de hashes y contraseñas una vez termine la práctica.
 
 Recursos
+
 - Documentación oficial: https://www.openwall.com/john/
 - Repositorio John Jumbo: https://github.com/openwall/john
 - Ejemplos y cheatsheets: busca "John the Ripper cheatsheet" para reglas y máscaras comunes.
 
 Si quieres, puedo:
+
 - Insertar un ejemplo real simulado dentro del `writeups/learning/Responder_WRITEUP.md` con la línea de captura y salida `john --show` para que reconozcas el formato.
 - Generar un pequeño cheat-sheet PDF/markdown sólo con comandos que usas más (rockyou, masks, restore, show).

@@ -1,45 +1,52 @@
 ---
-title: "NTLM (NT LAN Manager) — Resumen, ataques y mitigaciones"
-description: "NTLM (NT LAN Manager) — Resumen, ataques y mitigaciones"
-category: "Imported Documentation"
+title: 'NTLM (NT LAN Manager) — Resumen, ataques y mitigaciones'
+description: 'NTLM (NT LAN Manager) — Resumen, ataques y mitigaciones'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - ntlm
 ---
+
 NTLM (NT LAN Manager) — Resumen, ataques y mitigaciones
 
 Resumen
+
 - NTLM es una familia de protocolos de autenticación de Microsoft (LM, NTLMv1, NTLMv2).
 - Usa un esquema challenge-response en el que el servidor envía un reto (challenge) y el cliente responde con un hash basado en la contraseña, evitando enviar la contraseña en claro.
 - Aún presente en redes Windows por compatibilidad; es objetivo frecuente para reenvío (relay), captura y Pass-the-Hash (PtH).
 
 Versiones y diferencias
+
 - LM: antiguo e inseguro; truncaba y transformaba contraseñas a mayúsculas; debe estar deshabilitado.
 - NTLMv1: usa DES; vulnerable a ataques offline y cracking rápido.
 - NTLMv2: mejora de seguridad (HMAC-MD5 sobre challenge/response); resistente comparativamente, pero aún susceptible a relay y reuso si no se aplican mitigaciones.
 
 Cómo funciona (simplificado)
+
 1. Cliente solicita recurso al servidor.
 2. Servidor responde con un challenge (8 bytes) y pide autenticación.
 3. Cliente calcula la respuesta usando el hash de la contraseña y el challenge.
 4. El servidor verifica que la respuesta coincide con la esperada o consulta un DC para validar (en entornos Kerberos/AD).
 
 Atacantes: vectores comunes
+
 - Captura de hashes: interceptar challenge/response (ej. con Responder, ntlmrelay) para obtener la respuesta o forzar autenticación.
 - NTLM Relay: capturar una autenticación NTLM y reenviarla a otro servicio (SMB/HTTP/LDAP/WinRM) donde el servidor acepta la autenticación y el atacante actúa como cliente legítimo.
 - Pass-the-Hash (PtH): si el atacante obtiene el NT hash (NTLM hash) de un usuario, lo puede reutilizar para autenticarse en servicios que aceptan ese hash en lugar de la contraseña.
 - Relaying combinado con SMB/LDAP/HTTP: convertir un intento de autenticación en acceso a recursos remotos o ejecución remota (RCE) dependiendo del servicio objetivo.
 
 Herramientas comunes
+
 - Responder: escucha en la red y responde a peticiones LLMNR/NetBIOS/mDNS para capturar hashes NTLM.
 - ntlmrelayx (Impacket): relé de autenticaciones NTLM hacia objetivos soportados (SMB, HTTP, LDAP, MSSQL, WinRM).
-- impacket (wmiexec.py, psexec.py, smbrelay*): utilidades para autenticación NTLM y relay.
+- impacket (wmiexec.py, psexec.py, smbrelay\*): utilidades para autenticación NTLM y relay.
 - crackmapexec (cme): escaneo y ejecución remota usando credenciales/relays.
 - responder-ng / mitm6: variantes y herramientas modernizadas para ataques en red IPv4/IPv6.
 - hashcat / john: romper hashes capturados (NTLMv1/v2, LM).
 
 Cómo capturar y explotar (ejemplos rápidos)
+
 - Detectar servicios susceptibles: SMB, HTTP, WinRM (5985), LDAP, MSSQL.
 - Ejecutar `Responder` en la red para capturar intentos:
 
@@ -66,6 +73,7 @@ crackmapexec smb 10.10.10.0/24 -u 'Administrator' -H 'aad3b435b51404eeaad3b435b5
 ```
 
 Defensas y mitigaciones
+
 - Deshabilitar LM y NTLMv1: configurar `LmCompatibilityLevel` y políticas de dominio para forzar NTLMv2 o Kerberos.
 - Habilitar SMB signing (mandatorio) y LDAP signing para prevenir la manipulación/relay.
 - Utilizar Extended Protection for Authentication y Channel Binding cuando sea posible.
@@ -76,6 +84,7 @@ Defensas y mitigaciones
 - Monitorización: alertas sobre numerosos rechazos de autenticación, intentos de autenticación internos inesperados y uso de herramientas conocidas (Responder, impacket).
 
 Detectar intentos de ataque
+
 - Revisar eventos de seguridad Windows:
   - Event ID 4625 (failed logon), 4624 (successful logon) — correlacionar con origen inesperado.
   - Event ID 4768/4769 (Kerberos TGS/AS requests) y errores de autenticación asociados.
@@ -83,16 +92,19 @@ Detectar intentos de ataque
 - Firmas IPS/IDS: reglas para detectar `ntlmrelayx`, `Responder` y patrones de SMB relay.
 
 Buenas prácticas en tests de laboratorio
+
 - Solo atacar objetivos en entornos controlados y con permiso explícito.
 - Para pruebas: crear un dominio de laboratorio, cuentas con contraseñas conocidas, y un host objetivo con SMB/HTTP/WinRM para verificar relays.
 - Cuando captures hashes, evita publicarlos; trátalos como secretos sensibles.
 
 Recursos y lecturas
+
 - Microsoft docs: "How NTLM authentication works" (explicaciones oficiales).
 - Impacket repo: herramientas y ejemplos (`ntlmrelayx.py`, `wmiexec.py`).
 - Responder README y mitigations.
 - Publicaciones sobre NTLM relay y mitigaciones (Jasager/Hoover/varios blogs de seguridad).
 
 Notas finales
+
 - NTLM sigue siendo una superficie de ataque relevante en muchas redes Windows; entender el flujo challenge-response, los vectores de relay y las mitigaciones es esencial para defensa ofensiva y defensiva.
 - Si quieres, adapto esta documentación para incluir comandos y ejemplos específicos para la máquina `Responder` (capturas, logs y comandos concretos que usaríamos en el laboratorio).

@@ -1,24 +1,28 @@
 ---
-title: "Responder — Guía rápida"
-description: "Responder — Guía rápida"
-category: "Imported Documentation"
+title: 'Responder — Guía rápida'
+description: 'Responder — Guía rápida'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - responder
 ---
+
 Responder — Guía rápida
 
 Resumen
+
 - Responder es una herramienta para la envenenación y captura de autenticaciones en redes Windows: responde a peticiones LLMNR, NetBIOS-NS y mDNS para inducir a clientes a autenticarse contra el atacante.
 - Objetivo típico: capturar hashes NetNTLMv1/NetNTLMv2 o forzar relays (NTLM relay) hacia servicios internos.
 
 Qué hace
+
 - Escucha en la red y contesta a resoluciones locales (LLMNR/NetBIOS/mDNS) haciéndose pasar por recursos buscados.
 - Cuando un cliente intenta autenticarse, Responder captura el challenge/response (o el NT hash según la configuración).
 - Guarda la captura en logs y, en combinación con `ntlmrelayx.py`, permite relays hacia servicios vulnerables.
 
 Uso básico (listener en `tun0`)
+
 - Inicia Responder en la interfaz `tun0` y guarda resultados:
 
 ```bash
@@ -29,11 +33,12 @@ sudo responder -I tun0 -wrf
   - `-I` : interfaz de red (ej. `tun0`).
   - `-w` : escribir resultados/logs a disco.
   - `-r` : responder (responder a LLMNR/NetBIOS/mDNS).
-  - `-f` : modo más agresivo/verbose (fingerprinting / respuestas rápidas). 
-  - `-v` : verbose (depuración). 
-(Consulta `responder -h` para ver la versión y flags exactos de tu instalación.)
+  - `-f` : modo más agresivo/verbose (fingerprinting / respuestas rápidas).
+  - `-v` : verbose (depuración).
+    (Consulta `responder -h` para ver la versión y flags exactos de tu instalación.)
 
 Salida y ficheros importantes
+
 - Responder crea un directorio de logs (ej. `./Logs/Responder-<timestamp>/`) con archivos que contienen las capturas y detalles.
 - Busca líneas con `NTLMv2-SSP` o `NETNTLMv2` para localizar capturas.
 
@@ -49,6 +54,7 @@ cat Logs/Responder-*/Responder-Session.log | less
 ```
 
 Qué hacer con una captura
+
 - Para relays: usa `ntlmrelayx.py` (Impacket) para reenviar la autenticación capturada hacia SMB/HTTP/WinRM/LDAP, etc.
 - Para cracking offline: usar `hashcat`/`john` con el modo apropiado (NetNTLMv2). Ejemplo con hashcat (modo NetNTLMv2):
 
@@ -57,6 +63,7 @@ hashcat -m 5600 captured_hashes.txt wordlist.txt
 ```
 
 Integración con `ntlmrelayx` (flujo común)
+
 - Mientras Responder captura, puedes configurar `ntlmrelayx.py` para recibir y reenviar autenticaciones a un objetivo:
 
 ```bash
@@ -66,6 +73,7 @@ sudo ntlmrelayx.py -tf targets.txt -smb2support --output-relay-log relay.log
 - Alternativa: ejecutar `ntlmrelayx.py` con `--delegate-access` / `--escalate` según la versión de Impacket y objetivos.
 
 Detección y mitigación
+
 - Deshabilitar LLMNR y NetBIOS en endpoints y servidores cuando sea posible.
 - Forzar Kerberos para autenticación entre hosts (reducir uso de NTLM).
 - Habilitar SMB signing y LDAP signing para evitar relays.
@@ -73,11 +81,13 @@ Detección y mitigación
 - Monitorizar eventos Windows (4624/4625) y picos de autenticaciones desde hosts inesperados.
 
 Buenas prácticas de laboratorio
+
 - Ejecuta Responder solo en entornos controlados y con permiso explícito.
 - Si vas a relaye ar autenticaciones, tener objetivos de prueba y cuentas con contraseñas conocidas.
 - Sanitiza y elimina capturas sensibles después de las pruebas.
 
 Ejemplo práctico (pasos rápidos)
+
 1. En tu máquina de pentest, iniciar listener en `tun0`:
 
 ```bash
@@ -101,9 +111,11 @@ hashcat -m 5600 captured_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 
 Recursos y lecturas
+
 - Repositorio de Responder (README) — opciones, versión y ejemplos.
 - Impacket (`ntlmrelayx.py`) — documentación y ejemplos de relay.
 - Artículos y posts sobre NTLM relay y mitigaciones (TrustedSec, Rapid7, etc.).
 
 Siguiente paso
+
 - Puedo añadir comandos y salidas esperadas adaptados a la máquina `Responder` que estás atacando (ej.: mostrar cómo se vería una captura típica en `tun0`, y cómo preparar `ntlmrelayx` apuntando a `winrm://10.129.95.234`). ¿Quieres que lo integre en `writeups/learning/Responder_WRITEUP.md`?

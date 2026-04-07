@@ -1,20 +1,18 @@
-import Link from "next/link";
+import Link from 'next/link'
 
-import type { NotebookSummary, WriteupSummary } from "@/types/content";
+import type { NotebookSummary, WriteupSummary } from '@/types/content'
 
 type SidebarProps = {
-  notebooks: NotebookSummary[];
-  posts: WriteupSummary[];
-};
+  notebooks: NotebookSummary[]
+  posts: WriteupSummary[]
+}
 
 export function Sidebar({ notebooks, posts }: SidebarProps) {
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-28 space-y-6">
         <section className="rounded-[1.75rem] border border-white/10 bg-slate-950/68 p-6 shadow-[0_18px_60px_rgba(2,8,23,0.25)] backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">
-            Quick Links
-          </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">Quick Links</p>
           <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
             <Link href="/#hero" className="transition hover:text-white">
               Landing page
@@ -29,9 +27,7 @@ export function Sidebar({ notebooks, posts }: SidebarProps) {
         </section>
 
         <section className="rounded-[1.75rem] border border-white/10 bg-slate-950/68 p-6 shadow-[0_18px_60px_rgba(2,8,23,0.25)] backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">
-            Notebook Tools
-          </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">Notebook Tools</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {notebooks.map((notebook) => (
               <Link
@@ -46,9 +42,7 @@ export function Sidebar({ notebooks, posts }: SidebarProps) {
         </section>
 
         <section className="rounded-[1.75rem] border border-white/10 bg-slate-950/68 p-6 shadow-[0_18px_60px_rgba(2,8,23,0.25)] backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">
-            Recent Posts
-          </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/75">Recent Posts</p>
           <div className="mt-4 space-y-4 text-sm">
             {posts.map((post) => (
               <Link
@@ -66,5 +60,5 @@ export function Sidebar({ notebooks, posts }: SidebarProps) {
         </section>
       </div>
     </aside>
-  );
+  )
 }

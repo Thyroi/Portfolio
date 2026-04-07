@@ -1,6 +1,13 @@
 # Portfolio
 
+[![CI](https://github.com/Thyroi/Portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Thyroi/Portfolio/actions/workflows/ci.yml)
+[![Vercel](https://img.shields.io/website?url=https%3A%2F%2Fportfolio-blog-ten-sigma.vercel.app&label=vercel&logo=vercel)](https://portfolio-blog-ten-sigma.vercel.app)
+
 A modern developer portfolio and technical blog built with Next.js, TypeScript, Tailwind CSS, MDX, and shadcn/ui, featuring security writeups and an interactive tool notebook system.
+
+## Live Demo
+
+- Production: `https://portfolio-blog-ten-sigma.vercel.app`
 
 ## Overview
 
@@ -23,6 +30,10 @@ Writeups are stored as MDX content and tool references can open an interactive r
 - Driver.js installed for future guided product tours
 - Path aliases with `@/`
 - Static generation for content routes
+- ESLint + Prettier code quality setup
+- Husky + lint-staged pre-commit checks
+- Vitest + Testing Library test setup
+- GitHub Actions CI for format, lint, test, and build
 
 ## Tech Stack
 
@@ -35,6 +46,24 @@ Writeups are stored as MDX content and tool references can open an interactive r
 - gray-matter
 - next-mdx-remote
 - Driver.js
+
+## Quality Tooling
+
+The project includes a lightweight quality gate for local development and CI:
+
+- ESLint with Next.js core web vitals, TypeScript, and React Hooks rules
+- Prettier for consistent formatting
+- Husky pre-commit hook
+- lint-staged for staged TypeScript and JavaScript files
+- Vitest with jsdom and Testing Library
+- GitHub Actions CI workflow
+
+### Pre-commit behavior
+
+On commit, staged `js`, `jsx`, `ts`, and `tsx` files run:
+
+- `eslint --fix`
+- `prettier --write`
 
 ## Project Structure
 
@@ -112,6 +141,36 @@ Start the development server:
 npm run dev
 ```
 
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Format the repository:
+
+```bash
+npm run format
+```
+
+Check formatting without writing changes:
+
+```bash
+npm run format:check
+```
+
+Run tests:
+
+```bash
+npm run test -- --run
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
 Build for production:
 
 ```bash
@@ -123,6 +182,17 @@ Start the production server locally:
 ```bash
 npm run start
 ```
+
+## Available Scripts
+
+- `npm run dev` starts the local Next.js development server
+- `npm run build` creates a production build
+- `npm run start` runs the built application
+- `npm run lint` runs ESLint across the repository
+- `npm run format` formats the repository with Prettier
+- `npm run format:check` checks formatting without writing changes
+- `npm run test` starts Vitest
+- `npm run test:watch` starts Vitest in watch mode
 
 ## Tool Drawer Integration
 
@@ -143,6 +213,23 @@ Main places to update first:
 - `content/writeups/` for your blog posts
 - `content/notebooks/` for your tool documentation
 - `components/landing/` for landing page sections
+
+## Testing and CI
+
+Vitest is configured with a `jsdom` environment and a shared setup file for Testing Library matchers.
+
+Relevant files:
+
+- `vitest.config.ts`
+- `src/tests/setup.ts`
+- `tests/components/`
+
+GitHub Actions runs the following checks on pushes to `main` and on pull requests:
+
+- `npm run format:check`
+- `npm run lint`
+- `npm run test -- --run`
+- `npm run build`
 
 ## GitHub Repository Setup
 
@@ -207,6 +294,7 @@ vercel --prod
 - No extra environment variables are required for the current version of the app.
 - Content is stored locally in the repository, so deployment does not depend on an external CMS.
 - Each push to `main` can trigger an automatic Vercel deployment once the repo is connected.
+- GitHub Actions CI can fail before deployment if format, lint, test, or build checks break.
 
 ## License
 

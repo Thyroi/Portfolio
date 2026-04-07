@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { NotebookDrawerProvider } from "@/components/notebook/notebook-drawer";
+import { NotebookDrawerProvider } from '@/components/notebook/notebook-drawer'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <NotebookDrawerProvider>{children}</NotebookDrawerProvider>;
+  return <NotebookDrawerProvider>{children}</NotebookDrawerProvider>
 }

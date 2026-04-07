@@ -1,20 +1,23 @@
 ---
-title: "SQL Injection Blind (Guía Completa)"
-description: "SQL Injection (SQLi) ocurre cuando una aplicación construye consultas SQL con entrada del usuario sin validación/sanitización adecuada."
-category: "Imported Documentation"
+title: 'SQL Injection Blind (Guía Completa)'
+description: 'SQL Injection (SQLi) ocurre cuando una aplicación construye consultas SQL con entrada del usuario sin validación/sanitización adecuada.'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - sqlblind
 ---
+
 # SQL Injection Blind (Guía Completa)
 
 ## 1. Qué es SQL Injection
+
 SQL Injection (SQLi) ocurre cuando una aplicación construye consultas SQL con entrada del usuario sin validación/sanitización adecuada.
 
 En lugar de tratar tu entrada como dato, la base de datos la interpreta como parte de la consulta.
 
 Resultado potencial:
+
 - Bypass de login.
 - Lectura de datos sensibles.
 - Modificación de datos.
@@ -23,40 +26,51 @@ Resultado potencial:
 ---
 
 ## 2. Qué significa Blind SQLi
+
 Blind SQLi significa que la aplicación vulnerable NO muestra directamente:
+
 - resultados de la consulta inyectada, ni
 - errores SQL detallados.
 
 Aun así, la inyección existe. Solo que el atacante debe inferir la respuesta por efectos secundarios.
 
 Canales típicos en blind:
+
 - Boolean-based: la respuesta cambia sutilmente si la condición es verdadera o falsa.
 - Time-based: la respuesta tarda más cuando la condición es verdadera (por ejemplo con SLEEP).
 
 ---
 
 ## 3. Tipos principales de SQLi
+
 ### 3.1 In-band SQLi
+
 El dato inyectado y el resultado vuelven por el mismo canal HTTP.
 
 Incluye:
+
 - Error-based SQLi: mensajes de error revelan información.
 - UNION-based SQLi: el atacante concatena resultados al output de la página.
 
 ### 3.2 Blind SQLi
+
 No hay salida directa de datos. Se infiere por comportamiento.
 
 Incluye:
+
 - Boolean-based blind.
 - Time-based blind.
 
 ### 3.3 Out-of-band SQLi
+
 Exfiltración por un canal alterno (DNS/HTTP saliente), menos común.
 
 ---
 
 ## 4. Blind SQLi para entenderlo fácil
+
 Piensa en una caja negra que solo responde:
+
 - rapido
 - lento
 
@@ -68,6 +82,7 @@ Si la respuesta es NO, responde normal.
 Con eso puedes reconstruir datos carácter por carácter.
 
 Ejemplo conceptual:
+
 - Pregunta: "El primer carácter del hash del admin es a?"
 - Si SI: SLEEP(5)
 - Si NO: respuesta inmediata
@@ -77,9 +92,11 @@ Repites para cada carácter y vas armando el valor real.
 ---
 
 ## 5. Por qué usar SLEEP si "ya controla SQL"
+
 Porque en blind SQLi controlas lógica SQL, pero no necesariamente la salida visual.
 
 Limitaciones de la app vulnerable:
+
 - No imprime el resultado de tu SELECT.
 - No muestra errores útiles.
 - Devuelve siempre una página "normal".
@@ -89,31 +106,42 @@ Entonces necesitas un canal lateral. El tiempo es ese canal.
 ---
 
 ## 6. Boolean-based vs Time-based
+
 ## Boolean-based
+
 Qué observas:
+
 - Cambios de contenido (texto, longitud, redirect, contador, etc.).
 
 Ventaja:
+
 - Más rápido que time-based cuando hay señal clara.
 
 Riesgo:
+
 - Si la señal visual es sutil o inestable, puede ser ambiguo.
 
 ## Time-based
+
 Qué observas:
+
 - Diferencia de tiempo de respuesta.
 
 Ventaja:
+
 - Útil aunque la respuesta visual no cambie.
 
 Riesgo:
+
 - Más lento.
 - Sensible a jitter de red (VPN inestable, latencia variable).
 
 ---
 
 ## 7. Qué puedes obtener con Blind SQLi
+
 Dependiendo de permisos del usuario de DB:
+
 - Nombre de base de datos actual.
 - Lista de tablas/columnas.
 - Usuarios de aplicación.
@@ -121,14 +149,18 @@ Dependiendo de permisos del usuario de DB:
 - Tokens/secretos en tablas de config.
 
 Importante:
+
 - Blind SQLi no equivale automáticamente a shell del sistema.
 - Normalmente es una puerta para pivotear (credenciales, datos internos, etc.).
 
 ---
 
 ## 8. Flujo práctico de validación (sin explotar de más)
+
 ## Paso 1: Hallar parámetro sospechoso
+
 Ejemplos típicos:
+
 - id
 - sort
 - filter
@@ -136,20 +168,26 @@ Ejemplos típicos:
 - page
 
 ## Paso 2: Comparar payload TRUE y FALSE
+
 Si boolean-based:
+
 - Condición verdadera y falsa deben producir diferencias consistentes.
 
 Si time-based:
+
 - Condición verdadera debe tardar claramente más que falsa.
 
 ## Paso 3: Repetir varias veces
+
 No concluyas con una sola prueba.
 
 Mínimo recomendado:
+
 - 5 a 10 repeticiones por condición.
 - Promediar tiempos.
 
 ## Paso 4: Controlar ruido de red
+
 - Usar VPN estable (TCP si UDP está inestable).
 - Evitar escaneos pesados en paralelo.
 - Mantener timeout razonable.
@@ -157,16 +195,20 @@ Mínimo recomendado:
 ---
 
 ## 9. Interpretación de resultados (muy importante)
+
 Señal fuerte de SQLi blind time-based:
+
 - Payload TRUE: consistentemente +3s, +5s o +10s.
 - Payload FALSE: respuesta normal.
 - Diferencia se repite en múltiples intentos.
 
 Falso positivo común:
+
 - Servidor lento para todo.
 - Latencia VPN variable.
 
 Cómo evitarlo:
+
 - Usa baseline sin payload.
 - Alterna TRUE/FALSE/BASELINE en secuencia.
 - Repite y compara medias.
@@ -174,29 +216,38 @@ Cómo evitarlo:
 ---
 
 ## 10. Herramientas útiles
+
 ## Burp Suite Repeater
+
 Ideal para:
+
 - Enviar manualmente TRUE/FALSE.
 - Ver tiempos por request.
 - Afinar payload sin automatización temprana.
 
 ## sqlmap
+
 Ideal para:
+
 - Confirmar vector.
 - Automatizar extracción de DB/tables/columns/dumps.
 
 Notas:
+
 - En blind puede tardar bastante.
 - Ajustar threads/timeouts según estabilidad.
 
 ## curl
+
 Ideal para:
+
 - Medición rápida de tiempos en scripts.
 - Validar conectividad fuera del navegador.
 
 ---
 
 ## 11. Ejemplo de medición con curl
+
 Comando de medición:
 
 ```bash
@@ -204,11 +255,13 @@ curl -s -o /dev/null -w "code=%{http_code} start=%{time_starttransfer} total=%{t
 ```
 
 Qué mirar:
+
 - code
 - time_starttransfer
 - time_total
 
 Ejecuta con:
+
 - baseline
 - payload TRUE
 - payload FALSE
@@ -218,20 +271,25 @@ Y compara tendencias, no solo un intento aislado.
 ---
 
 ## 12. Diferencia entre impacto DB y RCE
+
 Impacto por SQLi:
+
 - Compromiso de confidencialidad/integridad de datos.
 - Posible obtención de credenciales reutilizables.
 
 RCE:
+
 - Ejecutar comandos en el sistema operativo.
 
 Relación:
+
 - SQLi puede llevar a RCE en algunos casos,
 - pero requiere pasos adicionales (permisos altos DB, file write, funciones peligrosas, credenciales pivote, etc.).
 
 ---
 
 ## 13. Checklist rápido para CTF/HTB
+
 - Confirmé versión de la app.
 - Confirmé autenticación requerida o no.
 - Probé TRUE/FALSE con resultados repetibles.
@@ -243,6 +301,7 @@ Relación:
 ---
 
 ## 14. Errores comunes
+
 - Concluir vulnerabilidad con un solo request.
 - Confundir lentitud general con SLEEP exitoso.
 - Pensar que SQLi siempre da shell.
@@ -252,7 +311,9 @@ Relación:
 ---
 
 ## 15. Aplicación al caso ZoneMinder
+
 Si tienes acceso autenticado y una CVE blind SQLi:
+
 - Espera extracción de datos internos de DB.
 - No asumas RCE inmediata.
 - Usa lo obtenido para pivotar (usuarios/hashes/secretos).
@@ -261,6 +322,7 @@ Si tienes acceso autenticado y una CVE blind SQLi:
 ---
 
 ## 16. Glosario breve
+
 - SQLi: inyección SQL.
 - Blind: sin salida directa de datos.
 - Boolean-based: inferencia por cambio lógico en respuesta.
@@ -272,4 +334,5 @@ Si tienes acceso autenticado y una CVE blind SQLi:
 ---
 
 ## 17. Nota ética
+
 Practica estas técnicas solo en laboratorios autorizados (HTB, CTF, entornos propios con permiso).

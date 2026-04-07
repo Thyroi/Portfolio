@@ -1,35 +1,43 @@
 ---
-title: "Amass — Enumeración de subdominios (documentación estándar)"
-description: "Amass — Enumeración de subdominios (documentación estándar)"
-category: "Imported Documentation"
+title: 'Amass — Enumeración de subdominios (documentación estándar)'
+description: 'Amass — Enumeración de subdominios (documentación estándar)'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - amass
 ---
+
 Amass — Enumeración de subdominios (documentación estándar)
 
 Resumen
+
 - Amass es una suite para descubrimiento de activos DNS y mapeo de subdominios. Soporta modos pasivo (OSINT) y activo (scanning, bruteforce), integración con APIs (VirusTotal, Shodan, SecurityTrails), y generación de grafos de relacion.
 
 Propósito / Cuándo usar
+
 - Uso: enumeración inicial de subdominios, recolección OSINT, descubrimiento de estructuras DNS y mapeo de dependencias.
 - Útil antes de escaneo activo para crear listas de subdominios, encontrar delegaciones, identificar wildcard y posibles takeover.
 
 Requisitos / dependencias
+
 - Go runtime (para compilar desde fuente) o binario precompilado.
 - Opcional: claves API para servicios (SecurityTrails, VirusTotal, Shodan, Censys) para mejorar cobertura.
 - Requiere `git` si compilas desde el repo.
 
 Instalación
+
 - Instalación en Debian/Ubuntu/Parrot (paquetes APT):
+
 ```bash
 sudo apt-get update
 sudo apt-get install amass
 ```
+
 - Nota: algunos usuarios prefieren `sudo apt update && sudo apt install amass -y` para automatizar la confirmación; ambas variantes funcionan según tu sistema.
 
 - Para la versión más reciente (recomendado si quieres las últimas funciones): instalar desde la fuente usando Go:
+
 ```bash
 GO111MODULE=on go install -v github.com/OWASP/Amass/v3/...@master
 # Asegúrate que $GOPATH/bin está en tu PATH
@@ -38,18 +46,22 @@ GO111MODULE=on go install -v github.com/OWASP/Amass/v3/...@master
 - Alternativa: descargar release binario desde GitHub y colocar `amass` en `/usr/local/bin`.
 
 Verificación post-instalación
+
 ```bash
 amass -version
 # o
 amass enum -h
 ```
+
 Si el comando muestra la versión o la ayuda, la instalación fue exitosa.
 
 Nota sobre Parrot/Debian/Ubuntu
+
 - En la mayoría de distribuciones basadas en Debian (Ubuntu, Parrot), `apt-get install amass` instala la versión empaquetada por la distribución. Si no encuentras `amass` en los repos, usa la instalación por Go o descarga el release oficial desde GitHub.
 - Si tu instalación falló por dependencias o repos no actualizados, ejecutar `sudo apt-get update` antes de `apt-get install` suele resolverlo.
 
 Qué hace (resumen técnico)
+
 - Recolecta subdominios mediante múltiples fuentes (certificados públicos, APIs, motores de búsqueda, archivos públicos) y técnicas (DNS brute force, zone transfer checks, scraping de WHOIS/archivos públicos).
 - Soporta modos:
   - `enum -passive` : sólo fuentes pasivas (no provoca tráfico DNS directo hacia el objetivo).
@@ -57,19 +69,27 @@ Qué hace (resumen técnico)
   - `viz` / graphing: generar grafo de relaciones entre nombres/IPs.
 
 Comandos básicos / Quick start
+
 - Enumeración pasiva (rápida, sin impacto directo):
+
 ```bash
 amass enum -passive -d example.com -o amass_passive.txt
 ```
+
 - Enumeración activa (más ruido):
+
 ```bash
 amass enum -active -d example.com -o amass_active.txt
 ```
+
 - Enumeración con API keys (configurar `~/.config/amass/config.ini` o pasar flags):
+
 ```bash
 amass enum -d example.com -o amass_api.txt -src -ip
 ```
+
 - Generar grafo (graphviz):
+
 ```bash
 amass viz -d example.com -o amass_graph.html
 ```
@@ -86,42 +106,52 @@ Tabla de parámetros / flags (selecta)
 | `-config` | Ruta a fichero config con API keys | `-config ~/.config/amass/config.ini` |
 
 Ejemplos avanzados y pipelines
+
 - Integración con `httpx` y `dnsx` para resolver y comprobar HTTP:
+
 ```bash
 amass enum -passive -d example.com -o amass.txt
 cat amass.txt | dnsx -a -resp -o resolved.txt
 cat resolved.txt | httpx -threads 50 -o live_http.txt
 ```
+
 - Usar Amass como fuente para `gobuster vhost`:
+
 ```bash
 amass enum -passive -d thetoppers.htb -o amass.txt
 gobuster vhost -u http://thetoppers.htb -w amass.txt --append-domain -t 50
 ```
 
 Output esperado y cómo interpretar
+
 - `amass` produce listas de hostnames. Filtra `*.example.com` y elimina wildcard `*.` con `sed 's/\*\.//g' | sort -u`.
 - Si usas `-src`, verás la fuente (crtsh, VirusTotal, etc.) — evalúa confianza y prioridad.
 - Después de amass, siempre resolver con `dnsx`/`massdns` para eliminar falsos positivos.
 
 Limitaciones y consideraciones
+
 - En modo activo puede generar ruido (consultas DNS), respeta el alcance y la policy del engagement.
 - Cobertura depende de APIs y resolvers configurados; sin API keys la cobertura pasiva puede ser limitada.
 
 Buenas prácticas
+
 - Ejecuta `-passive` primero, combina resultados y luego `-active` si necesitas más cobertura.
 - Mantén un archivo de resolvers confiables (`resolvers.txt`) para `massdns`.
 - Normaliza y deduplica resultados: `cat amass.txt | sed 's/\*\.//g' | sort -u > candidates.txt`.
 - Guarda outputs por fecha y versiona (`outputs/amass/2026-03-19_amass.txt`).
 
 Integración con otras herramientas
+
 - `subfinder` / `assetfinder` para cobertura adicional.
 - `dnsx` / `massdns` para resolución masiva.
 - `httpx` para detectar servicios web.
 - `altdns`/`dnsgen` para permutaciones.
 
 Referencias
+
 - Repo: https://github.com/OWASP/Amass
 - Documentación oficial: https://github.com/OWASP/Amass/wiki
 
 Changelog del documento
+
 - 2026-03-19: Creado usando plantilla estándar; incluye instalación, quick-start y pipelines.

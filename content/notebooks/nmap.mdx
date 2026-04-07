@@ -1,23 +1,24 @@
 ---
-title: "Guía práctica de Nmap"
-description: "Esta guía ofrece buenas prácticas y ejemplos genéricos para usar nmap en entornos de laboratorio o con permiso."
-category: "Imported Documentation"
+title: 'Guía práctica de Nmap'
+description: 'Esta guía ofrece buenas prácticas y ejemplos genéricos para usar nmap en entornos de laboratorio o con permiso.'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - nmap
 ---
+
 # Guía práctica de Nmap
 
 Esta guía ofrece buenas prácticas y ejemplos genéricos para usar `nmap` en entornos de laboratorio o con permiso.
 
-1) Errores comunes
+1. Errores comunes
 
 - Poner el nombre de archivo en la posición del objetivo: Nmap interpretará cualquier token que no sea una opción como un host y fallará si no puede resolverlo.
 - Usar `-o` solo: Nmap requiere `-oN`, `-oA`, `-oX` o `-oG` para formatos de salida; `-o` no es válida.
 - Orden: las opciones van antes o junto al objetivo, pero el objetivo (IP/host) debe aparecer en la línea de comando en su forma correcta.
 
-2) Opciones y ejemplos genéricos
+2. Opciones y ejemplos genéricos
 
 - Escaneo básico con scripts NSE por defecto y detección de versión, guardando salida legible:
 
@@ -55,22 +56,21 @@ nmap -Pn -T4 -sC -sV -oN nmap_noping.txt 10.0.0.1
 nmap -T4 -sC -sV -p- -oN nmap_scan.txt 10.0.0.1 | tee nmap_scan.stdout.txt
 ```
 
-3) Timing y agresividad
+3. Timing y agresividad
 
 - `-T5` es muy agresivo y puede provocar drops, falsos negativos o detección por IDS/IPS. Para la mayoría de los laboratorios `-T4` es un buen equilibrio. Usa `-T3` en redes sensibles.
-
 
 # Guía práctica de Nmap
 
 Esta guía ofrece buenas prácticas y ejemplos genéricos para usar `nmap` en entornos de laboratorio o con permiso.
 
-1) Errores comunes
+1. Errores comunes
 
 - Poner el nombre de archivo en la posición del objetivo: Nmap interpretará cualquier token que no sea una opción como un host y fallará si no puede resolverlo.
 - Usar `-o` solo: Nmap requiere `-oN`, `-oA`, `-oX` o `-oG` para formatos de salida; `-o` no es válida.
 - Orden: las opciones van antes o junto al objetivo, pero el objetivo (IP/host) debe aparecer en la línea de comando en su forma correcta.
 
-2) Opciones y ejemplos genéricos
+2. Opciones y ejemplos genéricos
 
 - Escaneo básico con scripts NSE por defecto y detección de versión, guardando salida legible:
 
@@ -108,11 +108,11 @@ nmap -Pn -T4 -sC -sV -oN nmap_noping 10.0.0.1
 nmap -T4 -sC -sV -p- -oN nmap_scan.txt 10.0.0.1 | tee nmap_scan.stdout.txt
 ```
 
-3) Timing y agresividad
+3. Timing y agresividad
 
 - `-T5` es muy agresivo y puede provocar drops, falsos negativos o detección por IDS/IPS. Para la mayoría de los laboratorios `-T4` es un buen equilibrio. Usa `-T3` en redes sensibles.
 
-4) Recomendaciones prácticas
+4. Recomendaciones prácticas
 
 - Usa `-oA` para conservar resultados en varios formatos que faciliten análisis posteriores.
 - Documenta el comando exacto y la hora en tus writeups.
@@ -120,11 +120,11 @@ nmap -T4 -sC -sV -p- -oN nmap_scan.txt 10.0.0.1 | tee nmap_scan.stdout.txt
 - Para escaneos completos de todos los puertos usa `-p-`; si solo necesitas rapidez, usa `--top-ports`.
 - Ejecuta `sudo` para escaneos que requieran privilegios (SYN scans, detección OS más precisa).
 
-5) Consideraciones legales y éticas
+5. Consideraciones legales y éticas
 
 - Nunca escanees redes o sistemas sin permiso explícito. Usa entornos de laboratorio (máquinas virtuales o plataformas autorizadas) para practicar.
 
-6) Referencias
+6. Referencias
 
 - Manual: `man nmap`
 - Documentación: https://nmap.org/docs.html
@@ -132,43 +132,43 @@ nmap -T4 -sC -sV -p- -oN nmap_scan.txt 10.0.0.1 | tee nmap_scan.stdout.txt
 ---
 
 Archivo actualizado: documentation/nmap.md
- 
-8) Switch para ejecutar los scripts NSE por defecto
+
+8. Switch para ejecutar los scripts NSE por defecto
 
 - `-sC`: ejecuta el conjunto de scripts por defecto de Nmap (equivalente a `--script=default`). Es útil para obtener información adicional automatizada sin especificar scripts individuales.
 
-	Ejemplo:
+  Ejemplo:
 
-	```bash
-	nmap -T4 -sS -sC -sV -oN nmap_with_default_scripts 10.0.0.1
-	```
+  ```bash
+  nmap -T4 -sS -sC -sV -oN nmap_with_default_scripts 10.0.0.1
+  ```
 
-	Notas importantes:
-	- `-sC` ejecuta sólo los scripts del conjunto `default`. Para ejecutar scripts específicos o conjuntos distintos, usa `--script=<scriptname|category>`.
-	- Algunos scripts pueden ser intrusivos o lentos; revisa la lista de scripts y usa `--script-args` si necesitas pasar parámetros.
-	- Cuando necesites mayor control o identificar vulnerabilidades concretas, combina `-sC` con `--script` o ejecuta scripts NSE específicos (p. ej. `http-enum`, `mysql-info`).
+  Notas importantes:
+  - `-sC` ejecuta sólo los scripts del conjunto `default`. Para ejecutar scripts específicos o conjuntos distintos, usa `--script=<scriptname|category>`.
+  - Algunos scripts pueden ser intrusivos o lentos; revisa la lista de scripts y usa `--script-args` si necesitas pasar parámetros.
+  - Cuando necesites mayor control o identificar vulnerabilidades concretas, combina `-sC` con `--script` o ejecuta scripts NSE específicos (p. ej. `http-enum`, `mysql-info`).
 
-	Ejemplo para ejecutar un script específico:
+  Ejemplo para ejecutar un script específico:
 
-	```bash
-	nmap --script http-enum -p80 -oN nmap_http_enum 10.0.0.1
-	```
+  ```bash
+  nmap --script http-enum -p80 -oN nmap_http_enum 10.0.0.1
+  ```
 
-7) Tabla de opciones útiles y su uso
+7. Tabla de opciones útiles y su uso
 
-| Opción | ¿Qué hace? | Uso típico / posición | Ejemplo |
-|---|---:|---|---|
-| `-sS` | Escaneo SYN (half-open). Rápido y sigiloso; requiere privilegios para usarlo correctamente. | Antes de los scripts/version (`-sV`); usar con `sudo`. | `sudo nmap -sS 10.0.0.1` |
-| `-sV` | Detección de versión de servicios. Lanza probes para identificar versiones. | Después del tipo de scan; suele ir con `-sC`. | `nmap -sS -sV 10.0.0.1` |
-| `-sC` | Ejecuta los scripts NSE por defecto (equivalente a `--script=default`). Útil para enumeración inicial. | Junto a `-sV` para más información en un solo paso. | `nmap -sC -sV 10.0.0.1` |
-| `-p-` | Escanea todos los puertos (0-65535). Es exhaustivo y lento. | Colócalo donde van las opciones de puerto (antes del objetivo). | `nmap -p- -sV 10.0.0.1` |
-| `--top-ports <n>` | Escanea los &lt;n&gt; puertos más comunes; más rápido que `-p-`. | Alternativa rápida a `-p-`. | `nmap --top-ports 1000 -sV 10.0.0.1` |
-| `-Pn` | No hace ping previo; asume el host está arriba. Útil si ICMP está bloqueado. | Coloca entre opciones generales y puertos. | `nmap -Pn -sS -p- 10.0.0.1` |
-| `-vv` | Verbosity extra; muestra más información en pantalla. | Opción global: puede ir antes o después de las otras opciones. | `nmap -vv -sC -sV 10.0.0.1` |
-| `-oN/-oA/-oX/-oG` | Guardar salida en distintos formatos (normal, todos, XML, greppable). | Va antes del objetivo y requiere el nombre de archivo. | `nmap -oA scan_results 10.0.0.1` |
-| `-T3/-T4/-T5` | Timing templates: `T3` conservador, `T4` rápido, `T5` agresivo. | Especificar al inicio de opciones; elegir según entorno. | `nmap -T4 -sC -sV 10.0.0.1` |
+| Opción            |                                                                                             ¿Qué hace? | Uso típico / posición                                           | Ejemplo                              |
+| ----------------- | -----------------------------------------------------------------------------------------------------: | --------------------------------------------------------------- | ------------------------------------ |
+| `-sS`             |            Escaneo SYN (half-open). Rápido y sigiloso; requiere privilegios para usarlo correctamente. | Antes de los scripts/version (`-sV`); usar con `sudo`.          | `sudo nmap -sS 10.0.0.1`             |
+| `-sV`             |                            Detección de versión de servicios. Lanza probes para identificar versiones. | Después del tipo de scan; suele ir con `-sC`.                   | `nmap -sS -sV 10.0.0.1`              |
+| `-sC`             | Ejecuta los scripts NSE por defecto (equivalente a `--script=default`). Útil para enumeración inicial. | Junto a `-sV` para más información en un solo paso.             | `nmap -sC -sV 10.0.0.1`              |
+| `-p-`             |                                            Escanea todos los puertos (0-65535). Es exhaustivo y lento. | Colócalo donde van las opciones de puerto (antes del objetivo). | `nmap -p- -sV 10.0.0.1`              |
+| `--top-ports <n>` |                                       Escanea los &lt;n&gt; puertos más comunes; más rápido que `-p-`. | Alternativa rápida a `-p-`.                                     | `nmap --top-ports 1000 -sV 10.0.0.1` |
+| `-Pn`             |                           No hace ping previo; asume el host está arriba. Útil si ICMP está bloqueado. | Coloca entre opciones generales y puertos.                      | `nmap -Pn -sS -p- 10.0.0.1`          |
+| `-vv`             |                                                  Verbosity extra; muestra más información en pantalla. | Opción global: puede ir antes o después de las otras opciones.  | `nmap -vv -sC -sV 10.0.0.1`          |
+| `-oN/-oA/-oX/-oG` |                                  Guardar salida en distintos formatos (normal, todos, XML, greppable). | Va antes del objetivo y requiere el nombre de archivo.          | `nmap -oA scan_results 10.0.0.1`     |
+| `-T3/-T4/-T5`     |                                        Timing templates: `T3` conservador, `T4` rápido, `T5` agresivo. | Especificar al inicio de opciones; elegir según entorno.        | `nmap -T4 -sC -sV 10.0.0.1`          |
 
-8) Orden recomendado de opciones (ejemplo y explicación)
+8. Orden recomendado de opciones (ejemplo y explicación)
 
 Orden sugerido general:
 
@@ -189,6 +189,7 @@ sudo nmap -T4 -vv -sS -sC -sV -Pn -p- -oA nmap_scan 10.0.0.1
 ```
 
 Explicación del ejemplo:
+
 - `sudo`: permite `-sS` y permisos más precisos.
 - `-T4`: rapidez balanceada para laboratorios.
 - `-vv`: más información en pantalla para debugging.
@@ -198,7 +199,7 @@ Explicación del ejemplo:
 - `-p-`: revisa todos los puertos del objetivo.
 - `-oA nmap_scan`: guarda en `.nmap`, `.xml` y `.gnmap`.
 
-9) Buenas prácticas al documentar scans
+9. Buenas prácticas al documentar scans
 
 - Guarda siempre los comandos exactos y la hora.
 - Usa `-oA` para análisis posteriores y automatización.

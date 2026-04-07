@@ -1,68 +1,79 @@
 ---
-title: "Gobuster — Enumeración rápida (incluye VHOST)"
-description: "Gobuster — Enumeración rápida (incluye VHOST)"
-category: "Imported Documentation"
+title: 'Gobuster — Enumeración rápida (incluye VHOST)'
+description: 'Gobuster — Enumeración rápida (incluye VHOST)'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - gobuster-rapid
 ---
+
 Gobuster — Enumeración rápida (incluye VHOST)
 
 Resumen
+
 - `gobuster` es una herramienta rápida para fuerza/brute de directorios (dir), virtual hosts (vhost), DNS, y fuzzing en general.
 - Es ligera, paralelizable y útil para descubrir endpoints, virtual-hosts y endpoints ocultos en aplicaciones web.
 
 Cuándo usar
+
 - `dir` mode: descubrir archivos y directorios en una web.
 - `vhost` mode: descubrir virtual hosts probando valores del header `Host` y comprobando respuestas distintas. Útil cuando el servidor utiliza vhosts y no todos los nombres resuelven en DNS.
 
 Requisitos
+
 - `gobuster` (instalable en Debian/Parrot/Kali con `apt install gobuster` o build desde fuente).
 
 Comandos básicos / Quick start
+
 - Directorios:
+
 ```bash
 gobuster dir -u http://example.com -w /path/wordlist.txt -t 40 -o gob_dir.txt
 ```
+
 - VHOST (ejemplo de la imagen):
+
 ```bash
 gobuster vhost --append-domain -u http://thetoppers.htb -w /usr/share/wordlists/amass/subdomains-top1mil-20000.txt -t 10 -o gob_vhost_thetoppers.txt
 ```
 
 Parámetros útiles para `vhost`
 
-| Parámetro | Descripción | Cuándo usarlo |
-|---|---|---|
-| `--append-domain` | Añade automáticamente la parte de dominio final a cada entrada de la wordlist (p.ej. `s3` → `s3.thetoppers.htb`). | Cuando tu wordlist contiene sólo etiquetas/labels y quieres probar subdominios completos sin editar la lista. Muy útil con listas grandes de subdominios como las generadas por Amass. |
-| `-u` / `--url` | URL objetivo base a la que se hará la petición (ej. `http://thetoppers.htb`). | Siempre; indica el host/IP y esquema HTTP/HTTPS a probar. |
-| `-w` / `--wordlist` | Ruta a la wordlist de subdominios o labels. | Usa listas pequeñas (Amass pasiva) primero y listas grandes para búsqueda masiva. |
-| `-t` / `--threads` | Número de hilos concurrentes. | Ajusta según estabilidad del servidor y restricciones de ruido; valores bajos si el target es inestable o hay IDS/IPS. |
-| `-o` / `--output` | Archivo de salida donde guardar los resultados. | Siempre para conservar resultados y post-procesarlos. |
-| `-s` / `--status` | Filtrar códigos HTTP a mostrar. | Útil para centrarse en códigos específicos (p.ej. `-s 200,301,302`). |
-| `-k` | Ignorar errores SSL/TLS. | Cuando el target usa certificados autofirmados o mismatched. |
+| Parámetro           | Descripción                                                                                                       | Cuándo usarlo                                                                                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--append-domain`   | Añade automáticamente la parte de dominio final a cada entrada de la wordlist (p.ej. `s3` → `s3.thetoppers.htb`). | Cuando tu wordlist contiene sólo etiquetas/labels y quieres probar subdominios completos sin editar la lista. Muy útil con listas grandes de subdominios como las generadas por Amass. |
+| `-u` / `--url`      | URL objetivo base a la que se hará la petición (ej. `http://thetoppers.htb`).                                     | Siempre; indica el host/IP y esquema HTTP/HTTPS a probar.                                                                                                                              |
+| `-w` / `--wordlist` | Ruta a la wordlist de subdominios o labels.                                                                       | Usa listas pequeñas (Amass pasiva) primero y listas grandes para búsqueda masiva.                                                                                                      |
+| `-t` / `--threads`  | Número de hilos concurrentes.                                                                                     | Ajusta según estabilidad del servidor y restricciones de ruido; valores bajos si el target es inestable o hay IDS/IPS.                                                                 |
+| `-o` / `--output`   | Archivo de salida donde guardar los resultados.                                                                   | Siempre para conservar resultados y post-procesarlos.                                                                                                                                  |
+| `-s` / `--status`   | Filtrar códigos HTTP a mostrar.                                                                                   | Útil para centrarse en códigos específicos (p.ej. `-s 200,301,302`).                                                                                                                   |
+| `-k`                | Ignorar errores SSL/TLS.                                                                                          | Cuando el target usa certificados autofirmados o mismatched.                                                                                                                           |
 
 Notas sobre el ejemplo
 
 - El comando de ejemplo es apropiado cuando se tiene una wordlist generada por Amass (`subdomains-top1mil-20000.txt`) que contiene etiquetas/hostnames sin el dominio final. `--append-domain` evita editar la lista manualmente.
 - Flujo recomendado: iniciar con una lista pequeña (resultados de Amass o subfinder) y luego ejecutar con listas masivas si el servidor responde correctamente y quieres maximizar posibilidades.
 
-
 Explicación del modo `vhost`
+
 - `vhost` prueba cada palabra del wordlist como nombre de host (header `Host`) contra la URL indicada.
 - `--append-domain` añade automáticamente `.domain` a cada entrada si la wordlist contiene solo etiquetas (ej. `s3` → `s3.thetoppers.htb`).
 - A diferencia de Amass, `gobuster vhost` no requiere que el nombre exista en DNS: el servidor web puede estar configurado para responder de forma diferente según `Host:` incluso si ese nombre no resuelve públicamente.
 
 Interpretación de resultados
+
 - Línea típica: `Found: s3.thetoppers.htb Status: 404 [Size: 21]`.
   - `Status` y `Size` son útiles: un `404` con un `Size` distinto del valor genérico puede indicar un vhost válido (custom 404).
   - Busca cambios en `Status`, `Size`, `Title` (si estás capturando body) y `Location` (redirecciones).
 
 Falsos positivos y wildcard hosts
+
 - Si cualquier `Host:` devuelve la misma respuesta (same size, same title), probablemente sea wildcard hosting y no un vhost útil.
 - Prueba un host aleatorio (p.ej. `random1234.thedomain.test`) para comparar.
 
 Combinar Gobuster VHOST con Amass
+
 - Amass: descubre nombres que existen en DNS/CRT/etc. (fuentes pasivas). No detecta vhosts que no tengan rastro en DNS.
 - Gobuster VHOST: detecta virtual hosts por comportamiento del servidor (Host header). Complementa a Amass.
 - Flujo recomendado:
@@ -71,6 +82,7 @@ Combinar Gobuster VHOST con Amass
   3. Valida hits con `curl`/`httpx` y, si es necesario, añade temporalmente a `/etc/hosts` para navegar.
 
 Comandos para validar hits
+
 ```bash
 # extraer hosts detectados
 grep 'Found:' gob_vhost_thetoppers.txt | awk '{print $2}' > vhosts_found.txt
@@ -86,13 +98,16 @@ done < vhosts_found.txt
 ```
 
 Limitaciones
+
 - `gobuster vhost` genera tráfico activo y puede ser ruidoso. Usa con cuidado dentro del alcance autorizado.
 - Si el servidor responde con la misma página para cualquier `Host`, `gobuster` no encontrará vhosts útiles.
 
 Buenas prácticas
+
 - Ordena los wordlists: usar primero listas pequeñas y de alta probabilidad (Amass / subfinder), luego listas masivas.
 - Ajusta `-t` (threads) para no saturar la red ni activar IDS/IPS.
 - Siempre valida manualmente los hallazgos con `curl` o añadiendo entradas temporales en `/etc/hosts`.
 
 Referencias
+
 - Gobuster repo: https://github.com/OJ/gobuster

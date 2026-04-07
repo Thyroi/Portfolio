@@ -1,15 +1,17 @@
 ---
-title: "Guía práctica de MySQL para pentesting"
-description: "Respuesta rápida sobre el cliente MySQL"
-category: "Imported Documentation"
+title: 'Guía práctica de MySQL para pentesting'
+description: 'Respuesta rápida sobre el cliente MySQL'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - mysql
 ---
+
 # Guía práctica de MySQL para pentesting
 
 Respuesta rápida sobre el cliente MySQL
+
 - Para especificar el usuario en el cliente MySQL usa `-u` o `--user`.
 
 Ejemplo mínimo de conexión:
@@ -20,7 +22,8 @@ mysql -u usuario -p -h 10.0.0.1 -P 3306
 
 Descripción completa — qué debes saber y comandos representativos
 
-1) Opciones útiles del cliente
+1. Opciones útiles del cliente
+
 - `-u` / `--user` : usuario.
 - `-p` / `--password` : pide contraseña interactiva. `--password=SECRETA` evita prompt (no recomendable por seguridad).
 - `-h` / `--host` : host o IP del servidor MySQL.
@@ -28,13 +31,15 @@ Descripción completa — qué debes saber y comandos representativos
 - `-S` : socket local.
 - `-e` : ejecutar consulta y salir (`mysql -u user -p -e "SELECT VERSION();" -h host`).
 
-2) Detección y enumeración inicial
+2. Detección y enumeración inicial
+
 - Confirmar puerto/servicio: `nmap -sV -p3306 --script=mysql-info <host>`.
 - Banner/version puede ayudar a elegir exploits y técnicas.
 - Comprobar contraseñas vacías: `nmap --script=mysql-empty-password -p3306 <host>`.
 - Fuerza bruta (con precaución): `nmap --script=mysql-brute -p3306 <host>` o `hydra -L users.txt -P rockyou.txt mysql://10.0.0.1:3306`.
 
-3) Comandos SQL/Checks básicos después de conectar
+3. Comandos SQL/Checks básicos después de conectar
+
 - Mostrar versión y usuarios:
 
 ```sql
@@ -63,7 +68,8 @@ SELECT LOAD_FILE('/etc/passwd');
 SELECT 'hello' INTO OUTFILE '/tmp/test.txt';
 ```
 
-4) Vectores de explotación importantes
+4. Vectores de explotación importantes
+
 - Credenciales por defecto, contraseñas débiles o cuentas anónimas.
 - Credenciales almacenadas en ficheros de configuración de aplicaciones web (`wp-config.php`, `.env`, `config.php`).
 - `LOAD_FILE` y `INTO OUTFILE` si se dispone de permiso `FILE` y `secure_file_priv` no lo impide.
@@ -71,34 +77,38 @@ SELECT 'hello' INTO OUTFILE '/tmp/test.txt';
 - Carga de UDF (User Defined Functions) si puedes escribir en directorios de plugins → ejecución nativa.
 - Privilegios peligrosos: `SUPER`, `PROCESS`, `FILE`, `GRANT OPTION`, `REPLICATION`.
 
-5) Scripts y herramientas útiles
+5. Scripts y herramientas útiles
+
 - Nmap NSE: `mysql-info`, `mysql-empty-password`, `mysql-brute`, `mysql-users`, `mysql-databases`.
 - Hydra: fuerza bruta contra login MySQL.
 - Metasploit: módulos de escaneo/explotación para MySQL.
 - Buscar en filesystem/web: `grep -R "DB_PASSWORD" -n /var/www` o `grep -R "DB_HOST"`.
 
-6) Permisos y diferencias clave
+6. Permisos y diferencias clave
+
 - `User`@`Host` condiciona desde dónde puede iniciar sesión cada cuenta (p.ej. `user`@`localhost`).
 - `auth_socket` permite login por socket según usuario OS; no usar contraseñas.
 - `root@localhost` frecuentemente no permite acceso remoto; `root@%` sí.
 
-7) Recomendaciones y mitigaciones (para administradores)
+7. Recomendaciones y mitigaciones (para administradores)
+
 - No exponer MySQL a Internet sin controles (firewall, VPN).
 - Bind a `127.0.0.1` si no necesita acceso remoto.
 - Deshabilitar `LOCAL INFILE` si no es necesario y configurar `secure_file_priv`.
 - Restringir permisos y aplicar políticas de contraseñas fuertes.
 - Auditar y rotar credenciales; eliminar cuentas anónimas.
 
-8) Checklist rápido para pentester
-1. Confirmar puerto 3306 y versión.
-2. Probar acceso anónimo / password vacío.
-3. Intentar fuerza bruta con listas razonables (con permiso).
-4. Buscar credenciales en webapps/archivos.
-5. Si accedes, listar usuarios y grants.
-6. Comprobar `LOAD_FILE`, `INTO OUTFILE`, `secure_file_priv`.
-7. Valorar UDF si hay posibilidad de escribir en dirs de plugins.
+8. Checklist rápido para pentester
 
-9) ¿Cómo identificar la 'cuarta' base de datos única en un host?
+1) Confirmar puerto 3306 y versión.
+2) Probar acceso anónimo / password vacío.
+3) Intentar fuerza bruta con listas razonables (con permiso).
+4) Buscar credenciales en webapps/archivos.
+5) Si accedes, listar usuarios y grants.
+6) Comprobar `LOAD_FILE`, `INTO OUTFILE`, `secure_file_priv`.
+7) Valorar UDF si hay posibilidad de escribir en dirs de plugins.
+
+9. ¿Cómo identificar la 'cuarta' base de datos única en un host?
 
 Contexto: la mayoría de instancias MySQL incluyen por defecto estas bases de datos comunes:
 
@@ -134,7 +144,8 @@ sys
 
 En este ejemplo la cuarta (única) es `sys`.
 
-10) Comandos para investigar la DB única
+10. Comandos para investigar la DB única
+
 - Ver tablas dentro de la DB única:
 
 ```sql
@@ -148,7 +159,8 @@ SHOW TABLES;
 SELECT table_name FROM information_schema.tables WHERE table_schema = 'sys';
 ```
 
-11) Notas finales y seguridad ética
+11. Notas finales y seguridad ética
+
 - Toda interacción con servicios debe estar autorizada. No realices fuerza bruta ni explotación en sistemas no permitidos.
 - Documenta siempre comandos, salidas y timestamps en tus writeups.
 

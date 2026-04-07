@@ -1,18 +1,21 @@
 ---
-title: "AWS CLI — Uso rápido para S3"
-description: "Resumen"
-category: "Imported Documentation"
+title: 'AWS CLI — Uso rápido para S3'
+description: 'Resumen'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - awscli
 ---
+
 # AWS CLI — Uso rápido para S3
 
 Resumen
+
 - `awscli` es la herramienta oficial de AWS para interactuar con servicios (S3, EC2, IAM, etc.) desde la línea de comandos.
 
 Instalación
+
 - Debian/Ubuntu (apt):
 
 ```bash
@@ -47,12 +50,14 @@ aws configure — qué hace y cómo usarlo
 `aws configure` es una utilidad interactiva que guarda credenciales y opciones por defecto en `~/.aws/credentials` y `~/.aws/config`.
 
 Campos que solicita:
+
 - **AWS Access Key ID**: identificador de la clave de acceso (opcional si usarás acceso anónimo).
 - **AWS Secret Access Key**: clave secreta asociada (opcional si usarás `--no-sign-request`).
 - **Default region name**: región por defecto (ej. `us-east-1`). No es siempre necesaria para S3 locales, pero algunas APIs la requieren.
 - **Default output format**: formato de salida por defecto (`json`, `text`, `table`).
 
 Uso práctico y alternativas:
+
 - Crear o editar un perfil concreto:
 
 ```bash
@@ -85,6 +90,7 @@ export AWS_PROFILE=s3local
 ```
 
 Estructura de archivos (~/.aws)
+
 - `~/.aws/credentials` — almacena claves por perfil:
 
 ```
@@ -110,9 +116,9 @@ output = json
 ```
 
 Consejos rápidos
+
 - Para endpoints S3 locales o no públicos, puedes combinar `--endpoint-url` y un perfil o `--no-sign-request` para pruebas anónimas.
 - Evita guardar credenciales en repositorios o en sistemas compartidos; usa perfiles o variables de entorno temporales.
-
 
 Comandos básicos para S3
 
@@ -179,6 +185,7 @@ aws s3 sync s3://s3.thetoppers.htb ./s3_backup --endpoint-url http://10.129.59.1
 ```
 
 Consejos prácticos
+
 - Si el servicio usa Virtual Hosted–style (Host header = `bucket.s3.example.com`) y no responde por DNS público, usa `--endpoint-url` y el nombre del bucket con `s3api` como en los ejemplos anteriores.
 - Si necesitas forzar el Host header en pruebas puntuales, `curl` puede ayudar a inspeccionar respuestas HTTP:
 
@@ -188,6 +195,7 @@ openssl s_client -connect 10.129.59.197:443 -servername s3.thetoppers.htb
 ```
 
 Alternativas y utilidades complementarias
+
 - `s3cmd` (CLI clásico para S3)
 - `mc` (MinIO Client) — útil para endpoints S3 compatibles: ejemplo:
 
@@ -200,6 +208,7 @@ mc ls local/s3.thetoppers.htb
 - `curl` / `openssl s_client` para inspección HTTP/TLS detallada.
 
 Seguridad y responsabilidad
+
 - Estos comandos deben usarse sólo dentro del alcance autorizado. No intentes acceder a recursos ajenos sin permiso.
 
 Archivo: documentation/awscli.md

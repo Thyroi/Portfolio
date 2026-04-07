@@ -1,6 +1,6 @@
-import Link from "next/link";
+import Link from 'next/link'
 
-import { siteConfig } from "@/config/site";
+import { siteConfig } from '@/config/site'
 
 export function Navbar() {
   return (
@@ -14,19 +14,13 @@ export function Navbar() {
             <span className="block text-sm uppercase tracking-[0.3em] text-cyan-200/80">
               {siteConfig.name}
             </span>
-            <span className="block text-xs text-slate-400">
-              Portfolio and knowledge base
-            </span>
+            <span className="block text-xs text-slate-400">Portfolio and knowledge base</span>
           </span>
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-slate-200 md:flex">
           {siteConfig.navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="transition hover:text-white"
-            >
+            <Link key={item.label} href={item.href} className="transition hover:text-white">
               {item.label}
             </Link>
           ))}
@@ -55,5 +49,5 @@ export function Navbar() {
         ))}
       </div>
     </header>
-  );
+  )
 }

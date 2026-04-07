@@ -1,42 +1,40 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
-import { MarkdownRenderer } from "@/components/blog/markdown-renderer";
-import { getAllNotebookSummaries, getNotebookByTool } from "@/lib/content-loader";
+import { MarkdownRenderer } from '@/components/blog/markdown-renderer'
+import { getAllNotebookSummaries, getNotebookByTool } from '@/lib/content-loader'
 
 type NotebookPageProps = {
-  params: Promise<{ tool: string }>;
-};
-
-export async function generateStaticParams() {
-  const notebooks = await getAllNotebookSummaries();
-
-  return notebooks.map((notebook) => ({ tool: notebook.tool }));
+  params: Promise<{ tool: string }>
 }
 
-export async function generateMetadata({
-  params,
-}: NotebookPageProps): Promise<Metadata> {
-  const { tool } = await params;
-  const notebook = await getNotebookByTool(tool);
+export async function generateStaticParams() {
+  const notebooks = await getAllNotebookSummaries()
+
+  return notebooks.map((notebook) => ({ tool: notebook.tool }))
+}
+
+export async function generateMetadata({ params }: NotebookPageProps): Promise<Metadata> {
+  const { tool } = await params
+  const notebook = await getNotebookByTool(tool)
 
   if (!notebook) {
-    return { title: "Notebook not found" };
+    return { title: 'Notebook not found' }
   }
 
   return {
     title: notebook.title,
     description: notebook.description,
-  };
+  }
 }
 
 export default async function NotebookPage({ params }: NotebookPageProps) {
-  const { tool } = await params;
-  const notebook = await getNotebookByTool(tool);
+  const { tool } = await params
+  const notebook = await getNotebookByTool(tool)
 
   if (!notebook) {
-    notFound();
+    notFound()
   }
 
   return (
@@ -49,15 +47,11 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
           >
             Back to notebooks
           </Link>
-          <p className="text-sm uppercase tracking-[0.25em] text-slate-500">
-            {notebook.category}
-          </p>
+          <p className="text-sm uppercase tracking-[0.25em] text-slate-500">{notebook.category}</p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             {notebook.title}
           </h1>
-          <p className="max-w-2xl text-base leading-7 text-slate-600">
-            {notebook.description}
-          </p>
+          <p className="max-w-2xl text-base leading-7 text-slate-600">{notebook.description}</p>
           <div className="flex flex-wrap gap-2">
             {notebook.tags.map((tag) => (
               <span
@@ -73,5 +67,5 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
         <MarkdownRenderer className="text-slate-800" source={notebook.source} />
       </div>
     </div>
-  );
+  )
 }

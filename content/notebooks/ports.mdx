@@ -1,31 +1,33 @@
 ---
-title: "Puertos comunes — referencia rápida"
-description: "Tabla con puertos, descripción, vulnerabilidades conocidas/consideraciones y writeups donde se han usado."
-category: "Imported Documentation"
+title: 'Puertos comunes — referencia rápida'
+description: 'Tabla con puertos, descripción, vulnerabilidades conocidas/consideraciones y writeups donde se han usado.'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - ports
 ---
+
 # Puertos comunes — referencia rápida
 
 Tabla con puertos, descripción, vulnerabilidades conocidas/consideraciones y writeups donde se han usado.
 
-| Puerto | Descripción | Vulnerabilidades / consideraciones | Writeups / ejemplos |
-|---:|---|---|---|
-| 21 | FTP — File Transfer Protocol (texto claro). | Configuración peligrosa: `anonymous` habilitado, uploads sin control, credenciales en texto. Riesgo típico: misconfiguración y ficheros expuestos. | `writeups/Crocodile_WRITEUP.md` (FTP anónimo, `allowed.userlist*`) |
-| 22 | SSH — Secure Shell. | Riesgos: contraseñas débiles, reutilización de claves privadas, mala configuración (`PermitRootLogin`, `PasswordAuthentication`). Ataques: credential stuffing, key reuse; claves cifradas requieren cracking (John/ssh2). | `writeups/Facts_WRITEUP.md` (ejemplo de cracking de clave) |
-| 80 | HTTP — Web (Apache, Nginx, etc.). | Consideraciones: vhosts, headers, módulos vulnerables (mod_php, mod_ssl), rutas expuestas; vectores típicos: LFI, RCE, SQLi, XSS y exploits específicos de versiones/módulos. | `writeups/WingData_WRITEUP.md`, `writeups/Crocodile_WRITEUP.md`, `writeups/learning/Responder_WRITEUP.md` (Apache/Win64 ejemplo) |
-| 443 | HTTPS — HTTP sobre TLS. | Igual que 80 pero cifrado; requiere certificados y puede ocultar contenido de probes simples. | (por definir) |
-| 3306 | MySQL / MariaDB | Riesgos: contraseñas por defecto, `LOAD_FILE` / `INTO OUTFILE` con permiso `FILE`, `secure_file_priv` restringe rutas; UDF loading con permisos de escritura puede conducir a RCE. | `documentation/mysql.md` |
-| 135 | MS RPC / DCOM | Puerto usado para RPC/Windows services discovery; puede exponer información de servicio y ACLs; vectores para enumeración y explotación remota en servicios mal configurados. | `writeups/learning/Responder_WRITEUP.md` (recomendaciones de enumeración Windows) |
-| 137-139 | NetBIOS / NetBIOS-NS / NetBIOS-SSN | Usado por resolución NetBIOS y compartición de recursos; LLMNR/NetBIOS spoofing (RespondeR) puede forzar autenticaciones NTLM hacia el atacante. | `documentation/Responder.md`, `writeups/learning/Responder_WRITEUP.md` |
-| 445 | SMB (Microsoft-DS) | Compartición de ficheros/IPC; vectores: credenciales expuestas, SMB relay, EternalBlue en versiones antiguas, SMB signing ausente facilita relays. | `writeups/learning/Responder_WRITEUP.md`, `documentation/NTLM.md` |
-| 3389 | RDP — Remote Desktop Protocol | RDP puede exponer login en interfaces gráficas; riesgos: credenciales débiles, RDP brute-force, vulnerabilidades de deserialización o ejecución remota en versiones antiguas. | (uso general en laterales) |
-| 5985 | WinRM (HTTP) | WinRM over HTTP (5985) — permite PowerShell remoting; si tienes credenciales válidas puedes obtener shell remoto (evil-winrm). Buen objetivo tras obtener credenciales por capture/crack/relay. | `writeups/learning/Responder_WRITEUP.md`, `documentation/Evil-WinRM.md` |
-| 5986 | WinRM (HTTPS) | WinRM over HTTPS; contacto cifrado. Debes manejar certificados o usar `--no-ssl`/`-S` según herramienta. | `documentation/Evil-WinRM.md` |
+|  Puerto | Descripción                                 | Vulnerabilidades / consideraciones                                                                                                                                                                                         | Writeups / ejemplos                                                                                                              |
+| ------: | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+|      21 | FTP — File Transfer Protocol (texto claro). | Configuración peligrosa: `anonymous` habilitado, uploads sin control, credenciales en texto. Riesgo típico: misconfiguración y ficheros expuestos.                                                                         | `writeups/Crocodile_WRITEUP.md` (FTP anónimo, `allowed.userlist*`)                                                               |
+|      22 | SSH — Secure Shell.                         | Riesgos: contraseñas débiles, reutilización de claves privadas, mala configuración (`PermitRootLogin`, `PasswordAuthentication`). Ataques: credential stuffing, key reuse; claves cifradas requieren cracking (John/ssh2). | `writeups/Facts_WRITEUP.md` (ejemplo de cracking de clave)                                                                       |
+|      80 | HTTP — Web (Apache, Nginx, etc.).           | Consideraciones: vhosts, headers, módulos vulnerables (mod_php, mod_ssl), rutas expuestas; vectores típicos: LFI, RCE, SQLi, XSS y exploits específicos de versiones/módulos.                                              | `writeups/WingData_WRITEUP.md`, `writeups/Crocodile_WRITEUP.md`, `writeups/learning/Responder_WRITEUP.md` (Apache/Win64 ejemplo) |
+|     443 | HTTPS — HTTP sobre TLS.                     | Igual que 80 pero cifrado; requiere certificados y puede ocultar contenido de probes simples.                                                                                                                              | (por definir)                                                                                                                    |
+|    3306 | MySQL / MariaDB                             | Riesgos: contraseñas por defecto, `LOAD_FILE` / `INTO OUTFILE` con permiso `FILE`, `secure_file_priv` restringe rutas; UDF loading con permisos de escritura puede conducir a RCE.                                         | `documentation/mysql.md`                                                                                                         |
+|     135 | MS RPC / DCOM                               | Puerto usado para RPC/Windows services discovery; puede exponer información de servicio y ACLs; vectores para enumeración y explotación remota en servicios mal configurados.                                              | `writeups/learning/Responder_WRITEUP.md` (recomendaciones de enumeración Windows)                                                |
+| 137-139 | NetBIOS / NetBIOS-NS / NetBIOS-SSN          | Usado por resolución NetBIOS y compartición de recursos; LLMNR/NetBIOS spoofing (RespondeR) puede forzar autenticaciones NTLM hacia el atacante.                                                                           | `documentation/Responder.md`, `writeups/learning/Responder_WRITEUP.md`                                                           |
+|     445 | SMB (Microsoft-DS)                          | Compartición de ficheros/IPC; vectores: credenciales expuestas, SMB relay, EternalBlue en versiones antiguas, SMB signing ausente facilita relays.                                                                         | `writeups/learning/Responder_WRITEUP.md`, `documentation/NTLM.md`                                                                |
+|    3389 | RDP — Remote Desktop Protocol               | RDP puede exponer login en interfaces gráficas; riesgos: credenciales débiles, RDP brute-force, vulnerabilidades de deserialización o ejecución remota en versiones antiguas.                                              | (uso general en laterales)                                                                                                       |
+|    5985 | WinRM (HTTP)                                | WinRM over HTTP (5985) — permite PowerShell remoting; si tienes credenciales válidas puedes obtener shell remoto (evil-winrm). Buen objetivo tras obtener credenciales por capture/crack/relay.                            | `writeups/learning/Responder_WRITEUP.md`, `documentation/Evil-WinRM.md`                                                          |
+|    5986 | WinRM (HTTPS)                               | WinRM over HTTPS; contacto cifrado. Debes manejar certificados o usar `--no-ssl`/`-S` según herramienta.                                                                                                                   | `documentation/Evil-WinRM.md`                                                                                                    |
 
 Notas:
+
 - Esta tabla es un índice vivo — añade nuevas filas cuando encuentres servicios adicionales (SMB 445, RDP 3389, LDAP 389, etc.).
 - Para cada nueva máquina, referencia el writeup en la columna `Writeups` con la ruta relativa al repo.
 

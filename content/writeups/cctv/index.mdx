@@ -1,21 +1,22 @@
 ---
-title: "Hack The Box — CCTV: Writeup (en progreso)"
-description: "Estado: completado (fase inicial)."
-date: "2026-03-31"
+title: 'Hack The Box — CCTV: Writeup (en progreso)'
+description: 'Estado: completado (fase inicial).'
+date: '2026-03-31'
 tags:
   - writeup
-tools:
-  []
+tools: []
 ---
+
 # Hack The Box — CCTV: Writeup (en progreso)
 
 **Nombre de la máquina:** CCTV  
-**IP / Host:** 10.129.21.62 *(IP inicial 10.129.21.57 — cambió al reconectar VPN por TCP)*  
+**IP / Host:** 10.129.21.62 _(IP inicial 10.129.21.57 — cambió al reconectar VPN por TCP)_  
 **Fecha:** 2026-03-31  
 **Tipo:** Máquina real (no guided learning)  
 **Resumen:** Reconocimiento completado. Dos servicios: SSH (22/tcp) y HTTP (80/tcp). Acceso al dashboard con credenciales por defecto `admin:admin`. El sistema es **ZoneMinder** (software open-source de gestión de CCTV). Fase de enumeración interna y búsqueda de CVEs en curso.
 
 ## 1) Reconocimiento
+
 - Estado: completado (fase inicial).
 - Comandos ejecutados:
   - `nmap -T3 -sC -sV -vv -oN nmap_cctv.tsx 10.129.21.57`
@@ -33,6 +34,7 @@ tools:
     - Prueba de reutilización de credenciales en SSH: `admin` como usuario con password `admin` no autentica (`Permission denied`).
 
 ### Evidencia
+
 ```text
 # Nmap 7.95 scan initiated Tue Mar 31 10:56:01 2026 as: nmap -T3 -sC -sV -vv -oN nmap_cctv.tsx 10.129.21.57
 Increasing send delay for 10.129.21.57 from 10 to 20 due to 11 out of 16 dropped probes since last increase.
@@ -59,6 +61,7 @@ Service Info: Host: default; OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
 ## 2) Enumeración Web / Servicios
+
 - Estado: en progreso.
 - Servicio 1: HTTP (80/tcp)
   - Enumeración:
@@ -79,6 +82,7 @@ Service Info: Host: default; OS: Linux; CPE: cpe:/o:linux:linux_kernel
   - Hallazgos:
 
 ### Evidencia
+
 ```text
 getent hosts cctv.htb
 10.129.21.57    cctv.htb
@@ -102,7 +106,7 @@ curl -v --max-time 10 http://10.129.21.57 -H "Host: cctv.htb"
 > Host: cctv.htb
 > User-Agent: curl/8.14.1
 > Accept: */*
-> 
+>
 * Request completely sent off
 
 curl -v --max-time 15 http://cctv.htb/
@@ -136,6 +140,7 @@ curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
 ```
 
 ## 3) Explotación
+
 - Estado: en progreso.
 - Vector inicial: credenciales por defecto `admin:admin` en panel de login staff → acceso completo al dashboard.
 - Sistema identificado: **ZoneMinder 1.37.63** (gestión CCTV open-source).
@@ -158,6 +163,7 @@ curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
   - `john -w:/usr/share/wordlists/rockyou.txt --rules mak_passwrd.txt`
 
 ### Evidencia
+
 ```text
 [*] CVE-2024-51482 - ZoneMinder Blind SQL Injection Exploit
 [*] Target: cctv.htb
@@ -168,26 +174,31 @@ curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
 ```
 
 ## 4) Post-explotación
+
 - Estado: pendiente de datos.
 - Enumeración local:
 - Hallazgos clave:
 - Escalada de privilegios:
 
 ### Evidencia
+
 ```text
 [Pega aqui comandos y salidas de privilege escalation]
 ```
 
 ## 5) Flags / Resultados
+
 - user.txt:
 - root.txt:
 - Resultado final:
 
 ## 6) Archivos generados / evidencia
+
 - [ ] Agregar listado de archivos creados durante el proceso (rutas dentro del repo).
 - [ ] Referenciar outputs relevantes (nmap, gobuster, capturas, notas).
 
 ## 7) Lecciones aprendidas
+
 - Qué funcionó:
 - Qué falló:
 - Qué estudiar después:

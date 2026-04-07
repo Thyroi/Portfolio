@@ -1,27 +1,31 @@
 ---
-title: "Local File Inclusion (LFI) — Guía rápida"
-description: "Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web que permite a un atacante leer (y en algunos casos ejecutar) ficheros locales del servidor mediante la inclusión no segura de rutas de fichero"
-category: "Imported Documentation"
+title: 'Local File Inclusion (LFI) — Guía rápida'
+description: 'Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web que permite a un atacante leer (y en algunos casos ejecutar) ficheros locales del servidor mediante la inclusión no segura de rutas de fichero'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - lfi
 ---
+
 # Local File Inclusion (LFI) — Guía rápida
 
 Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web que permite a un atacante leer (y en algunos casos ejecutar) ficheros locales del servidor mediante la inclusión no segura de rutas de ficheros en funciones del lenguaje (por ejemplo `include`, `require` en PHP). Se explota típicamente a través de parámetros que controlan rutas a ficheros.
 
 **Qué es y cómo funciona**
+
 - Definición: LFI permite que una aplicación haga referencia a un fichero local controlado por el atacante o a una ruta arbitraria en el sistema de ficheros.
 - Vector típico: un parámetro URL/POST que se pasa a una función de inclusión (PHP: `include($_GET['page'])`) o que el servidor usa para abrir y mostrar contenido.
 - Diferencia con RFI: RFI (Remote File Inclusion) permite incluir archivos remotos (por URL); LFI se limita a ficheros locales, pero puede llevar a RCE con técnicas adicionales (log poisoning, wrappers, uploads).
 
 **Qué tener en cuenta antes de probar**
+
 - Solo en entornos autorizados (laboratorio/CTF/permiso explícito).
 - Revisar versión de servidor y stack (PHP, Apache, módulos habilitados) y permisos de ficheros.
 - Si el servidor corre en Windows, la sintaxis de rutas cambia (`C:\path\file`) y no siempre permiten técnicas Unix-like.
 
 **Técnicas y vectores comunes**
+
 - Path traversal: `?file=../../../../etc/passwd`
 - Encoding/normalización: `..%2f..%2f`, `%2e%2e%2f`, `..\..\` (Windows)
 - Null byte (histórico): agregar `%00` para truncar cadenas en binarios antiguos (menos efectivo hoy)
@@ -30,6 +34,7 @@ Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web qu
 - Upload + include: subir un archivo `.php` si existe upload y luego incluirlo
 
 **Detección (enumeración manual y automática)**
+
 - Inspeccionar formularios y parámetros que cargan páginas (p.ej. `?page=`, `?lang=`, `?template=`).
 - Peticiones probando traversal y wrappers; guardar respuestas y tamaños.
 - Herramientas: `ffuf/gobuster` para descubrir rutas, `Burp` para pruebas manuales, `curl` para pruebas rápidas.
@@ -38,12 +43,14 @@ Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web qu
   - `curl 'http://target/?page=php://filter/read=convert.base64-encode/resource=index.php'`
 
 **Elevación desde LFI a RCE (escenarios comunes)**
+
 - Log poisoning + `php` interpretation: si los logs son incluidos y están escritos con código PHP inyectado, puede ejecutarse.
 - Uploadable files: subir un `.php` y luego incluirlo.
 - Inclusion de sockets o dispositivos (en sistemas mal configurados) — depende de permisos.
 - Notas: muchas de estas técnicas requieren condiciones adicionales (permisos, módulos, configuración `allow_url_include`, etc.).
 
 **Mitigaciones y buenas prácticas**
+
 - No usar `include` con entradas directamente controladas por el usuario; validar y normalizar rutas.
 - Usar listas blancas (whitelists) de ficheros permitidos en vez de concatenar rutas.
 - Restringir permisos de ficheros (el usuario del servidor web no debe poder leer ficheros sensibles).
@@ -52,16 +59,18 @@ Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web qu
 - Hacer hardening del servidor (actualizaciones, módulos innecesarios deshabilitados).
 
 **Cómo leer un CVE (pasos y campos clave)**
-1) Identificador: `CVE-YYYY-NNNNN` — único.
-2) Descripción: resumen técnico del problema (qué hace, condiciones de explotación).
-3) Affected versions / CPE: versiones afectadas (p.ej. "&lt;= 2.4.51" o "2.4.49 and 2.4.50").
-4) CVSS: puntaje de severidad (3.x o 4.0) y vector (AV/AC/PR/UI/C/I/A) que explica el contexto de explotación.
-5) CWE: clase del fallo (ej. `CWE-22 Path Traversal`, `CWE-79 XSS`, `CWE-787 OOB write`).
-6) References: advisories, parches, PoC, listas de correo — revisa vendor advisory primero.
-7) Mitigación/patch: versión donde se corrige y recomendaciones.
-8) Timeline / notas: fecha de publicación, modificaciones posteriores.
+
+1. Identificador: `CVE-YYYY-NNNNN` — único.
+2. Descripción: resumen técnico del problema (qué hace, condiciones de explotación).
+3. Affected versions / CPE: versiones afectadas (p.ej. "&lt;= 2.4.51" o "2.4.49 and 2.4.50").
+4. CVSS: puntaje de severidad (3.x o 4.0) y vector (AV/AC/PR/UI/C/I/A) que explica el contexto de explotación.
+5. CWE: clase del fallo (ej. `CWE-22 Path Traversal`, `CWE-79 XSS`, `CWE-787 OOB write`).
+6. References: advisories, parches, PoC, listas de correo — revisa vendor advisory primero.
+7. Mitigación/patch: versión donde se corrige y recomendaciones.
+8. Timeline / notas: fecha de publicación, modificaciones posteriores.
 
 **Ejemplos (CVEs relacionadas con Apache 2.4.52 según el advisory oficial)**
+
 - `CVE-2021-44790` (mod_lua multipart parser):
   - Descripción: buffer overflow en `mod_lua` al parsear cuerpos multipart (r:parsebody()).
   - Afecta: Apache httpd 2.4.51 y anteriores (NVD: "Up to (excluding) 2.4.52").
@@ -76,6 +85,7 @@ Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web qu
   - Relevancia: afecta configuraciones proxy; no es LFI, pero demuestra cómo la versión del servidor define la exposición a fallos graves.
 
 **Cómo usar esta info en tu laboratorio (seguro)**
+
 - Identifica si el servidor objetivo usa módulos (PHP, mod_lua, mod_proxy). Si no, varios CVE no son aplicables.
 - Para aprender LFI: crea una pequeña app PHP en local con `include $_GET['p']` y prueba traversal, `php://filter`, y mitigaciones (whitelist y realpath checks).
 - Revisa el `Vendor Advisory` (en la página Apache) para ver la versión que corrige el fallo y el parche aplicado.
@@ -83,25 +93,21 @@ Resumen: LFI (Local File Inclusion) es una vulnerabilidad en aplicaciones web qu
 ## LFI en Windows — consideraciones y payloads
 
 - Rutas típicas en Windows que puedes intentar si el servidor es Windows (ajusta mayúsculas/minúsculas):
-
   - `C:\Windows\System32\drivers\etc\hosts`
   - `C:\Windows\win.ini`
   - `C:\Apache24\conf\httpd.conf` (o `C:\Apache\conf\httpd.conf`) si Apache está instalado en `C:\Apache24`
   - `C:\inetpub\wwwroot\web.config` (si hay IIS mezclado o uploads)
 
 - Payload traversal Windows (ejemplos):
-
   - `../../../../../../../../Windows/System32/drivers/etc/hosts`
   - `..\..\..\..\..\..\Windows\System32\drivers\etc\hosts`
   - `../../../../..//..//..//windows/win.ini`
 
 - Wrappers y técnicas aplicables en Windows también:
-
   - `php://filter/read=convert.base64-encode/resource=C:/path/to/file.php` — útil para recuperar el código fuente PHP cuando la inclusión devuelve contenido no interpretado.
   - Log poisoning: en Windows busca rutas de logs de Apache (`C:\Apache24\logs\access.log`) y de IIS (`C:\inetpub\logs\LogFiles\...`) y prueba inyectar User-Agent con payload PHP y luego incluir el fichero de log.
 
 - Notas sobre diferencias con Unix:
-
   - Separador de rutas (`\` vs `/`) y diferentes ubicaciones de ficheros.
   - Permisos y cuentas: en Windows el usuario del servicio web puede leer distintos ficheros que en Linux; probar rutas comunes es clave.
   - Técnicas como `php://filter` funcionan igual en plataformas que ejecutan PHP.
@@ -125,14 +131,15 @@ ffuf -u 'http://unika.htb/?page=FUZZ' -w lfi_payloads.txt -H 'Host: unika.htb' -
 - Mensajes de error que revelen rutas o permisos.
 - Respuestas con contenido no esperable (por ejemplo un hosts o win.ini mostrado).
 
-
 **Advertencia legal y ética**
+
 - No pruebes estas vulnerabilidades contra sistemas sin permiso explícito.
 - Emplea máquinas de práctica (HTB, VMs, contenedores) o entornos controlados.
 
 ---
 
 Referencias rápidas detectadas (NVD/Apache):
+
 - Apache advisory: https://httpd.apache.org/security/vulnerabilities_24.html
 - NVD CVE-2021-44790: https://nvd.nist.gov/vuln/detail/CVE-2021-44790
 - NVD CVE-2021-44224: https://nvd.nist.gov/vuln/detail/CVE-2021-44224

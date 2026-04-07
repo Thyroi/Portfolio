@@ -1,6 +1,6 @@
-import Link from "next/link";
+import Link from 'next/link'
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -8,12 +8,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import type { WriteupSummary } from "@/types/content";
+} from '@/components/ui/card'
+import type { WriteupSummary } from '@/types/content'
 
 type PostCardProps = {
-  post: WriteupSummary;
-};
+  post: WriteupSummary
+}
 
 export function PostCard({ post }: PostCardProps) {
   return (
@@ -24,9 +24,7 @@ export function PostCard({ post }: PostCardProps) {
             {post.date}
           </p>
           <CardTitle className="text-slate-950">{post.title}</CardTitle>
-          <CardDescription className="leading-7">
-            {post.description}
-          </CardDescription>
+          <CardDescription className="leading-7">{post.description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           {post.tags.map((tag) => (
@@ -41,5 +39,5 @@ export function PostCard({ post }: PostCardProps) {
         </CardFooter>
       </Card>
     </Link>
-  );
+  )
 }

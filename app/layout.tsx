@@ -1,23 +1,23 @@
-import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
-import "driver.js/dist/driver.css";
+import type { Metadata } from 'next'
+import { IBM_Plex_Mono, Space_Grotesk } from 'next/font/google'
+import 'driver.js/dist/driver.css'
 
-import { Footer } from "@/components/layout/footer";
-import { Navbar } from "@/components/layout/navbar";
-import { Providers } from "@/app/providers";
-import { siteConfig } from "@/config/site";
-import "@/styles/globals.css";
+import { Footer } from '@/components/layout/footer'
+import { Navbar } from '@/components/layout/navbar'
+import { Providers } from '@/app/providers'
+import { siteConfig } from '@/config/site'
+import '@/styles/globals.css'
 
 const sans = Space_Grotesk({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-sans',
+  subsets: ['latin'],
+})
 
 const mono = IBM_Plex_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+})
 
 export const metadata: Metadata = {
   title: {
@@ -25,12 +25,12 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} h-full`}>
@@ -45,5 +45,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  );
+  )
 }

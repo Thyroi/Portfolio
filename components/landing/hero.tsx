@@ -1,6 +1,6 @@
-import Link from "next/link";
+import Link from 'next/link'
 
-import { siteConfig } from "@/config/site";
+import { siteConfig } from '@/config/site'
 
 export function Hero() {
   return (
@@ -47,5 +47,5 @@ export function Hero() {
         </div>
       </div>
     </section>
-  );
+  )
 }

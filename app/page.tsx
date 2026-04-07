@@ -1,12 +1,12 @@
-import { Contact } from "@/components/landing/contact";
-import { Hero } from "@/components/landing/hero";
-import { LatestPosts } from "@/components/landing/latest-posts";
-import { Projects } from "@/components/landing/projects";
-import { Stack } from "@/components/landing/stack";
-import { getLatestWriteups } from "@/lib/content-loader";
+import { Contact } from '@/components/landing/contact'
+import { Hero } from '@/components/landing/hero'
+import { LatestPosts } from '@/components/landing/latest-posts'
+import { Projects } from '@/components/landing/projects'
+import { Stack } from '@/components/landing/stack'
+import { getLatestWriteups } from '@/lib/content-loader'
 
 export default async function Home() {
-  const latestPosts = await getLatestWriteups(3);
+  const latestPosts = await getLatestWriteups(3)
 
   return (
     <div className="pb-24 pt-20">
@@ -16,5 +16,5 @@ export default async function Home() {
       <LatestPosts posts={latestPosts} />
       <Contact />
     </div>
-  );
+  )
 }

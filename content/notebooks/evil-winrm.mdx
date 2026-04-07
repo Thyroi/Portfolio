@@ -1,18 +1,21 @@
 ---
-title: "Evil-WinRM — Guía práctica (para DUMMIES)"
-description: "Evil-WinRM — Guía práctica (para DUMMIES)"
-category: "Imported Documentation"
+title: 'Evil-WinRM — Guía práctica (para DUMMIES)'
+description: 'Evil-WinRM — Guía práctica (para DUMMIES)'
+category: 'Imported Documentation'
 tags:
   - documentation
   - notebook
   - evil-winrm
 ---
+
 Evil-WinRM — Guía práctica (para DUMMIES)
 
 ¿Para qué sirve?
+
 - `evil-winrm` es una herramienta que proporciona una shell interactiva contra servicios WinRM (Windows Remote Management). Se usa en pentesting para ejecutar comandos remotos en sistemas Windows cuando WinRM (por defecto puertos 5985/5986) está habilitado.
 
 Instalación rápida
+
 - Kali/Parrot suelen traerla preinstalada. Alternativa (Ruby gem):
 
 ```bash
@@ -20,6 +23,7 @@ sudo gem install evil-winrm
 ```
 
 Requisitos previos
+
 - Conectividad al puerto WinRM del objetivo (5985 para HTTP, 5986 para HTTPS).
 - Credenciales válidas (usuario/contraseña) o un método que permita autenticarse contra WinRM (relay, Kerberos, etc.).
 - La cuenta debe tener permisos para ejecutar comandos vía WinRM (en varias configuraciones un usuario estándar sí puede usarlo).
@@ -35,6 +39,7 @@ evil-winrm -i 10.129.95.234 -u administrator -p badminton
 - `-p` : contraseña.
 
 Tabla rápida de parámetros útiles
+
 - `-i IP` : especifica la IP/host objetivo (obligatorio en la mayoría de flujos).
 - `-u USER` : nombre de usuario.
 - `-p PASS` : contraseña (texto plano).
@@ -47,6 +52,7 @@ Tabla rápida de parámetros útiles
 Nota: ejecuta `evil-winrm -h` para ver la lista completa y la versión que estés usando.
 
 Casos de uso / cuándo es viable usarlo
+
 - Viable cuando:
   - WinRM está habilitado y accesible desde tu posición (puedes conectar a 10.129.95.234:5985/5986).
   - Tienes credenciales válidas (usuario/contraseña) para la cuenta objetivo.
@@ -56,6 +62,7 @@ Casos de uso / cuándo es viable usarlo
   - Las credenciales no permiten autenticación WinRM (cuenta deshabilitada, login restringido por GPO, etc.).
 
 Qué comprobar antes de ejecutar
+
 1. Conectividad básica:
 
 ```bash
@@ -72,10 +79,12 @@ evil-winrm -i 10.129.95.234 -u <user> -p <pass> -c 'whoami'
 3. Si no funciona: comprobar errores (autenticación, timeouts, certificados SSL) y probar `--no-ssl` o `-P` con puerto correcto.
 
 Salida esperada (exitosa)
+
 - Shell interactiva con prompt de PowerShell o cmd.
 - Capacidad de ejecutar comandos remotos, subir/descargar ficheros (tiene comandos `upload`/`download` en la sesión), y ejecutar scripts.
 
 Ejemplos prácticos y helpers
+
 - Ejecutar un comando y salir:
 
 ```bash
@@ -97,26 +106,31 @@ download C:\Users\Administrator\Desktop\loot.txt /local/path/
 ```
 
 Limitaciones y alternativas
+
 - Si sólo tienes hashes NetNTLMv2 y no la contraseña, `evil-winrm` no puede autenticarse con el hash directamente. En ese caso:
   - Romper el hash offline (john/hashcat) — si es viable.
   - O usar relay (ntlmrelayx) para obtener acceso sin conocer la contraseña.
 - Para Kerberos / cuentas de dominio con políticas específicas puedes necesitar `--kerberos` o herramientas como `impacket`/`crackmapexec`.
 
 Qué permisos necesito y efectos (qué se puede hacer desde una sesión)
+
 - Un usuario estándar puede ejecutar comandos, enumerar ficheros y buscar credenciales.
 - Si la cuenta es administrador, puedes obtener información sensible, crear servicios, habilitar RDP, o moverte lateralmente.
 
 Buenas prácticas y seguridad
+
 - Usa `evil-winrm` sólo en entornos autorizados.
 - No dejes credenciales en texto plano en ficheros compartidos.
 - Registra y borra artefactos de pruebas cuando termines.
 
 Diagnóstico rápido de errores comunes
+
 - "Connection timed out": falta de conectividad o puerto bloqueado.
 - "Unauthorized" / "Authentication failed": credenciales erróneas o cuenta restringida.
 - SSL errors: probar `--no-ssl` o `-S` según corresponda.
 
 Recursos
+
 - Repositorio oficial / README: busca "Evil-WinRM" en GitHub para más ejemplos y versiones.
 
 ¿Quieres que integre la sección de `evil-winrm` dentro del `writeups/learning/Responder_WRITEUP.md` (comandos concretos usados y salida ejemplo) y que añada un bloque con la sesión que ejecutaste? Puedo añadir una captura simulada para que reconozcas el prompt y los comandos más útiles.

@@ -1,99 +1,85 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import Link from 'next/link'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-import { NotebookContent } from "@/components/notebook/notebook-content";
+import { NotebookContent } from '@/components/notebook/notebook-content'
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import type { NotebookDrawerPayload } from "@/types/content";
+} from '@/components/ui/sheet'
+import type { NotebookDrawerPayload } from '@/types/content'
 
 type NotebookDrawerContextValue = {
-  openTool: (tool: string) => void;
-};
+  openTool: (tool: string) => void
+}
 
-const NotebookDrawerContext = createContext<NotebookDrawerContextValue | null>(
-  null
-);
+const NotebookDrawerContext = createContext<NotebookDrawerContextValue | null>(null)
 
-export function NotebookDrawerProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [payload, setPayload] = useState<NotebookDrawerPayload | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function NotebookDrawerProvider({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const [selectedTool, setSelectedTool] = useState<string | null>(null)
+  const [payload, setPayload] = useState<NotebookDrawerPayload | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open || !selectedTool) {
-      return;
+      return
     }
 
-    let cancelled = false;
+    let cancelled = false
 
     async function loadNotebook() {
-      setIsLoading(true);
-      setError(null);
+      setIsLoading(true)
+      setError(null)
 
       try {
         const response = await fetch(`/api/notebook/${selectedTool}`, {
-          cache: "no-store",
-        });
+          cache: 'no-store',
+        })
 
         if (!response.ok) {
-          throw new Error("Unable to load notebook content.");
+          throw new Error('Unable to load notebook content.')
         }
 
-        const nextPayload = (await response.json()) as NotebookDrawerPayload;
+        const nextPayload = (await response.json()) as NotebookDrawerPayload
 
         if (!cancelled) {
-          setPayload(nextPayload);
+          setPayload(nextPayload)
         }
       } catch (nextError) {
         if (!cancelled) {
           setError(
-            nextError instanceof Error
-              ? nextError.message
-              : "Unable to load notebook content."
-          );
+            nextError instanceof Error ? nextError.message : 'Unable to load notebook content.'
+          )
         }
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+          setIsLoading(false)
         }
       }
     }
 
-    void loadNotebook();
+    void loadNotebook()
 
     return () => {
-      cancelled = true;
-    };
-  }, [open, selectedTool]);
+      cancelled = true
+    }
+  }, [open, selectedTool])
 
   const value = useMemo(
     () => ({
       openTool: (tool: string) => {
-        setSelectedTool(tool);
-        setOpen(true);
+        setSelectedTool(tool)
+        setOpen(true)
       },
     }),
     []
-  );
+  )
 
   return (
     <NotebookDrawerContext.Provider value={value}>
@@ -125,15 +111,15 @@ export function NotebookDrawerProvider({
         </SheetContent>
       </Sheet>
     </NotebookDrawerContext.Provider>
-  );
+  )
 }
 
 export function useNotebookDrawer() {
-  const context = useContext(NotebookDrawerContext);
+  const context = useContext(NotebookDrawerContext)
 
   if (!context) {
-    throw new Error("useNotebookDrawer must be used within NotebookDrawerProvider");
+    throw new Error('useNotebookDrawer must be used within NotebookDrawerProvider')
   }
 
-  return context;
+  return context
 }

