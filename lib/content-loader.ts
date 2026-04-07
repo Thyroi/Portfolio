@@ -17,6 +17,66 @@ const contentRoot = path.join(process.cwd(), 'content')
 const writeupsRoot = path.join(contentRoot, 'writeups')
 const notebooksRoot = path.join(contentRoot, 'notebooks')
 
+function normalizeText(value: unknown) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.replace(/\s+/g, ' ').trim()
+}
+
+function normalizeStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => normalizeText(item))
+    .filter(Boolean)
+}
+
+function extractExcerpt(content: string) {
+  const lines = content.split(/\r?\n/)
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+
+    if (!line || line.startsWith('#') || line.startsWith('```')) {
+      continue
+    }
+
+    return normalizeText(line)
+  }
+
+  return ''
+}
+
+function parseWriteupFrontmatter(data: unknown, content: string) {
+  const frontmatter = (data ?? {}) as Partial<WriteupFrontmatter>
+  const excerpt = extractExcerpt(content)
+
+  return {
+    title: normalizeText(frontmatter.title),
+    description: normalizeText(frontmatter.description) || excerpt,
+    date: normalizeDate(frontmatter.date),
+    tags: normalizeStringArray(frontmatter.tags),
+    tools: normalizeStringArray(frontmatter.tools),
+  }
+}
+
+function parseNotebookFrontmatter(data: unknown, content: string) {
+  const frontmatter = (data ?? {}) as Partial<NotebookFrontmatter>
+  const excerpt = extractExcerpt(content)
+
+  return {
+    title: normalizeText(frontmatter.title),
+    description: normalizeText(frontmatter.description) || excerpt,
+    category: normalizeText(frontmatter.category),
+    tags: normalizeStringArray(frontmatter.tags),
+  }
+}
+
 function normalizeDate(value: unknown) {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10)
@@ -42,16 +102,16 @@ export const getAllWriteups = cache(async (): Promise<WriteupSummary[]> => {
       .map(async (entry) => {
         const slug = entry.name
         const source = await fs.readFile(path.join(writeupsRoot, slug, 'index.mdx'), 'utf8')
-        const { data } = matter(source)
-        const frontmatter = data as WriteupFrontmatter
+        const { content, data } = matter(source)
+        const frontmatter = parseWriteupFrontmatter(data, content)
 
         return {
           slug,
           title: frontmatter.title,
           description: frontmatter.description,
-          date: normalizeDate(frontmatter.date),
-          tags: frontmatter.tags ?? [],
-          tools: frontmatter.tools ?? [],
+          date: frontmatter.date,
+          tags: frontmatter.tags,
+          tools: frontmatter.tools,
         } satisfies WriteupSummary
       })
   )
@@ -69,15 +129,15 @@ export const getWriteupBySlug = cache(async (slug: string): Promise<WriteupDocum
   try {
     const source = await fs.readFile(path.join(writeupsRoot, slug, 'index.mdx'), 'utf8')
     const { content, data } = matter(source)
-    const frontmatter = data as WriteupFrontmatter
+    const frontmatter = parseWriteupFrontmatter(data, content)
 
     return {
       slug,
       title: frontmatter.title,
       description: frontmatter.description,
-      date: normalizeDate(frontmatter.date),
-      tags: frontmatter.tags ?? [],
-      tools: frontmatter.tools ?? [],
+      date: frontmatter.date,
+      tags: frontmatter.tags,
+      tools: frontmatter.tools,
       source: content,
     }
   } catch {
@@ -93,15 +153,15 @@ export const getAllNotebookSummaries = cache(async (): Promise<NotebookSummary[]
       .map(async (entry) => {
         const tool = entry.name.replace(/\.mdx$/, '')
         const source = await fs.readFile(path.join(notebooksRoot, entry.name), 'utf8')
-        const { data } = matter(source)
-        const frontmatter = data as NotebookFrontmatter
+        const { content, data } = matter(source)
+        const frontmatter = parseNotebookFrontmatter(data, content)
 
         return {
           tool,
           title: frontmatter.title,
           description: frontmatter.description,
           category: frontmatter.category,
-          tags: frontmatter.tags ?? [],
+          tags: frontmatter.tags,
         } satisfies NotebookSummary
       })
   )
@@ -113,14 +173,14 @@ export const getNotebookByTool = cache(async (tool: string): Promise<NotebookDoc
   try {
     const source = await fs.readFile(path.join(notebooksRoot, `${tool}.mdx`), 'utf8')
     const { content, data } = matter(source)
-    const frontmatter = data as NotebookFrontmatter
+    const frontmatter = parseNotebookFrontmatter(data, content)
 
     return {
       tool,
       title: frontmatter.title,
       description: frontmatter.description,
       category: frontmatter.category,
-      tags: frontmatter.tags ?? [],
+      tags: frontmatter.tags,
       source: content,
     }
   } catch {

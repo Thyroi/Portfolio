@@ -25,7 +25,7 @@ export default async function NotebookIndexPage() {
 
       <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {notebooks.map((notebook) => (
-          <Link key={notebook.tool} href={`/notebook/${notebook.tool}`}>
+          <Link key={notebook.tool} href={`/notebook/${notebook.tool}`} className="block h-full">
             <Card className="h-full border-slate-900/10 bg-white/82 transition-transform duration-200 hover:-translate-y-1 hover:ring-slate-900/20">
               <CardHeader>
                 <p className="text-xs font-medium uppercase tracking-[0.25em] text-slate-500">
