@@ -1,0 +1,62 @@
+---
+title: "Learning Path — Plan de estudio práctico para pentesting"
+description: "Objetivo: convertir reconocimiento y hallazgos en habilidades repetibles."
+category: "Imported Documentation"
+tags:
+  - documentation
+  - notebook
+  - learning-path
+---
+# Learning Path — Plan de estudio práctico para pentesting
+
+Objetivo: convertir reconocimiento y hallazgos en habilidades repetibles.
+
+Estrategia general (4 semanas orientadas a práctica)
+
+- Semana 1 — Fundamentos y reconocimiento
+  - Repasa TCP/UDP, puertos comunes, cómo funcionan HTTP requests/responses.
+  - Practica `nmap`, `gobuster`, `curl` en 5 máquinas fáciles. Anota 5 hallazgos por máquina.
+
+- Semana 2 — Web y explotación básica
+  - PortSwigger Academy: ejercicios de XSS y SQLi.
+  - Practica formularios simples y captura/intercepta requests con Burp.
+
+- Semana 3 — Post-explotación y escalada local
+  - Monta una VM con Debian y practica `sudo -l`, SUID, cron, `/etc/passwd`, `/home` enumeration.
+  - Reproduce un caso de escalada simple (p. ej. uso de `facter` como en Facts). 
+
+- Semana 4 — CVE / PoC y automatización
+  - Elige 1 CVE/PoC, léelo, entiende cómo funciona y reproduce en laboratorio.
+  - Mejora tu script `auto_recon.py` para recoger nuevos indicadores.
+
+Metodología diaria
+- 60–90 minutos por máquina: 30–45 min investigación manual + 30–45 min reproducción y documentación.
+- Si te atasca &gt; 90 min, consulta la siguiente sección del writeup y reproduce sólo ese paso.
+
+Herramientas y recursos (ordenadas)
+- Reconocimiento: `nmap`, `masscan`, `amass` (DNS), `gobuster`, `ffuf`, `curl`.
+- Web: Burp Suite (Community), `sqlmap` (solo para aprendizaje), PortSwigger Academy.
+- Local: `linpeas`, `linux-exploit-suggester`, GTFOBins.
+- Exploits/CVE: `searchsploit`, Exploit-DB, GitHub PoC repos.
+
+Registro y métricas
+- Mantén un `learning_journal.md` con: máquina, tiempo dedicado, 3 aprendizajes, 1 acción para mejorar.
+- Cada 2 semanas, revisa 10 entradas y nota patrones de debilidad.
+
+Buenas prácticas
+- Automatiza lo repetitivo, pero forzar la reproducción manual de cada hallazgo crítico.
+- Practica en entornos controlados y autorizados.
+
+Plantilla rápida para cada máquina (usa en `writeups/<machine>/journal.md`)
+
+- Máquina: 
+- Fecha:
+- Tiempo invertido:
+- Comandos clave ejecutados:
+- Hallazgos principales (3):
+- Qué tenté y falló (3):
+- Próximo paso:
+
+---
+
+Archivo creado: documentation/learning_path.md

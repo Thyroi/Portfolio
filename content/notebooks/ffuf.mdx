@@ -1,0 +1,27 @@
+---
+title: ffuf
+description: Fast content discovery for routes, parameters, and virtual hosts.
+category: Content Discovery
+tags:
+  - fuzzing
+  - discovery
+  - web
+---
+
+## Core idea
+
+ffuf is strongest when the scope is clear, the matcher is intentional, and the
+response noise has been profiled first.
+
+## Useful commands
+
+```bash
+ffuf -u https://target.example/FUZZ -w ./wordlists/common.txt
+ffuf -H "Host: FUZZ.target.example" -u https://target.example -w ./subdomains.txt
+```
+
+## Checklist
+
+- Filter known baseline sizes.
+- Keep the wordlist relevant to the target stack.
+- Validate interesting responses manually before escalating.

@@ -1,0 +1,133 @@
+---
+title: "HTB — Crocodile: Writeup inicial (español)"
+description: "Máquina: Crocodile"
+date: "2026-03-19"
+tags:
+  - writeup
+  - learning
+tools:
+  []
+---
+# HTB — Crocodile: Writeup inicial (español)
+
+## Resumen
+
+Máquina: Crocodile
+
+Hallazgos iniciales:
+- Puerto `21/tcp` abierto — `vsftpd 3.0.3` con `Anonymous FTP login allowed`.
+- Puerto `80/tcp` abierto — `Apache/2.4.41 (Ubuntu)`, sitio con plantilla "Smash - Bootstrap Business Template".
+
+## 1) Reconocimiento y Nmap
+
+Comando usado (ejemplo):
+
+```
+nmap -T4 -sC -sV -oN crocodile_nmap.txt 10.129.10.22
+```
+
+Salida relevante:
+
+```
+21/tcp open  ftp     vsftpd 3.0.3
+  ftp-anon: Anonymous FTP login allowed
+  - allowed.userlist
+  - allowed.userlist.passwd
+80/tcp open  http    Apache httpd 2.4.41 (Ubuntu)
+```
+
+## 2) FTP (vector principal)
+
+- FTP anónimo permitido significa que cualquiera puede conectarse y listar/descargar archivos públicos. En este caso hay dos ficheros interesantes: `allowed.userlist` y `allowed.userlist.passwd`.
+- Pasos recomendados:
+  1. Conectar anónimamente:
+
+  ```bash
+  ftp 10.129.10.22
+  # usuario: anonymous  password: tu@email
+  ls
+  get allowed.userlist
+  get allowed.userlist.passwd
+  ```
+
+  2. Descargar con `lftp` (scriptable):
+
+  ```bash
+  lftp -u anonymous,anonymous 10.129.10.22 -e 'get allowed.userlist; get allowed.userlist.passwd; quit'
+  ```
+
+  3. Inspeccionar el contenido y buscar credenciales reutilizables:
+
+  ```bash
+  cat allowed.userlist* | sed -n '1,200p'
+  grep -i "pass\|password\|key" allowed.userlist* || true
+  ```
+
+  4. Si encuentras usuario:password probar en HTTP (formularios), SSH, FTP autenticado u otros servicios.
+
+## 2.1) Explotación concreta realizada
+
+- Acciones realizadas en este laboratorio:
+  - Conexión FTP anónima y listado de ficheros; se descargaron `allowed.userlist` (33 bytes) y `allowed.userlist.passwd` (62 bytes).
+  - Se revisaron ambos ficheros y se extrajo una credencial válida (usuario `admin` y su contraseña asociada).
+
+- Comandos ejecutados (ejemplo):
+
+```bash
+ftp 10.129.10.22
+# usuario: anonymous  password: tu@email
+ls
+get allowed.userlist
+get allowed.userlist.passwd
+cat allowed.userlist* | sed -n '1,200p'
+```
+
+- Resultado: se obtuvo la credencial `admin:***` (oculto aquí). Con esa credencial procedimos a la enumeración web.
+
+## 3) HTTP (aplicación web)
+
+- El servidor usa Apache 2.4.41. Aunque hay CVE para Apache en general, no explotes sin confirmar módulos vulnerables.
+- Enumeración web inicial:
+
+```
+curl -I http://crocodile.htb
+curl http://crocodile.htb | sed -n '1,200p'
+gobuster dir -u http://crocodile.htb -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 40 -o crocodile_gobuster_medium.txt
+```
+
+- Revisa `/vendor`, `/assets`, `/server-status` si aparecen; en muchos casos el vector más rápido es credenciales encontradas en FTP.
+
+## 4) Uso de `rockyou.txt` y cuándo aplicarlo
+
+- `rockyou.txt` es una wordlist de contraseñas comunes. Es útil para ataques de fuerza bruta/credential stuffing sobre servicios de autenticación (FTP, SSH, HTTP auth), NO para enumeración de directorios.
+- Cuándo usarla:
+  - Si FTP anónimo no permite escritura y encuentras un usuario en `allowed.userlist`, probar fuerza bruta del password con `hydra` contra FTP.
+  - Si encuentras un login web o panel de admin.
+
+Ejemplo (FTP autenticado):
+
+```bash
+hydra -L users.txt -P /usr/share/wordlists/rockyou.txt ftp://10.129.10.22 -t 4
+```
+
+## 5) Siguientes pasos recomendados
+
+1. Descargar y analizar `allowed.userlist*` inmediatamente. Buscar credenciales reutilizables.
+2. Enumerar web con `gobuster` (medium primero, luego large si el servicio tolera carga).
+3. Revisar archivos descargados en busca de contraseñas o claves y probar acceso en SSH/HTTP/FTP autenticado.
+4. Si consigues credenciales, documentar comandos y accesos y proceder a enumeración local.
+
+## 6) Archivos guardados / evidencia
+
+- Guarda todo en `writeups/Crocodile/`:
+  - `crocodile_nmap.txt`
+  - `crocodile_gobuster_medium.txt`
+  - `allowed.userlist`, `allowed.userlist.passwd` (si los descargaste)
+
+## 7) Notas de seguridad y ética
+
+- Solo ejecutar fuerza bruta y exploits en entornos autorizados. Documenta todo y evita operaciones destructivas.
+
+---
+
+Archivo creado: writeups/Crocodile_WRITEUP.md

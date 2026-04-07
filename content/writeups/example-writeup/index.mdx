@@ -1,0 +1,39 @@
+---
+title: Recon Notes From a Quiet Attack Surface
+description: Using Nmap, ffuf, and Burp Suite together to turn basic recon into a dependable triage workflow.
+date: 2026-04-07
+tags:
+  - recon
+  - web
+  - workflow
+tools:
+  - nmap
+  - ffuf
+  - burp
+---
+
+The target started as a low-noise web property, but even a calm surface becomes
+interesting once you shape the workflow around quick validation.
+
+I started with <ToolPill tool="nmap" /> to confirm exposed services and capture
+ a baseline before touching the HTTP layer. From there, <ToolPill tool="ffuf" />
+was enough to pull hidden directories into view while keeping the wordlist tight.
+
+Once the initial routes were mapped, <ToolPill tool="burp" label="Burp Suite" />
+gave me the fast feedback loop I needed for session replay and parameter review.
+
+## Why the sequence mattered
+
+1. Port and service discovery reduced guesswork.
+2. Content discovery narrowed the routes worth testing.
+3. Manual validation in the proxy separated real findings from noisy assumptions.
+
+## Working notes
+
+```bash
+nmap -sV -Pn target.example
+ffuf -u https://target.example/FUZZ -w ./wordlists/common.txt
+```
+
+This starter post is deliberately small, but it proves the full MDX path, the
+content loader, and the notebook drawer interaction.

@@ -1,0 +1,70 @@
+---
+title: "Gobuster — Uso práctico y ejemplos"
+description: "Qué es"
+category: "Imported Documentation"
+tags:
+  - documentation
+  - notebook
+  - gobuster
+---
+# Gobuster — Uso práctico y ejemplos
+
+Qué es
+- `gobuster` es una herramienta para fuerza bruta de directorios/archivos en aplicaciones web (`dir`), discovery de virtual hosts (`vhost`) y fuerza bruta de nombres de archivos.
+
+Opciones útiles
+- `-u` : URL objetivo (p. ej. `http://example.com`)
+- `-w` : wordlist
+- `-t` : threads (número de hilos)
+- `-x` : extensiones a probar (ej.: `php,html,txt`)
+- `-o` : archivo de salida
+- `-s` : códigos HTTP a mostrar (por defecto 200,204,301,302,307,401,403)
+- `-k` : ignorar problemas SSL
+
+Wordlists recomendadas
+- `medium` (ej.: `/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt`) — buen equilibrio entre velocidad y cobertura.
+- `large` (ej.: `raft-large-directories.txt` o listas combinadas) — mayor cobertura, más tiempo y ruido.
+- `rockyou.txt` — NO es para directorios; es una lista de contraseñas y se usa para cracking/brute force de credenciales.
+
+Cuándo usar cada lista
+- `small` / `medium`: inicio de reconocimiento o cuando el servidor es inestable o sospechas WAF.
+- `large`: después de identificar que el host responde bien y quieres maximizar descubrimiento (puede generar mucho ruido y falsos positivos).
+- `rockyou`: sólo para ataques de contraseña (SSH, FTP, HTTP auth, aplicaciones con credenciales), no para directorios.
+
+Ejemplos prácticos
+
+1) Escaneo rápido con lista `medium`:
+
+```bash
+gobuster dir -u http://wingdata.htb -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 40 -o wingdata_gobuster_medium.txt
+```
+
+2) Exploración más profunda con extensiones y lista `large`:
+
+```bash
+gobuster dir -u http://wingdata.htb -w /usr/share/wordlists/raft-large-directories.txt -x php,txt,html,zip,sql,env -t 60 -o wingdata_gobuster_large.txt
+```
+
+3) Comprobación de archivos comunes y backups:
+
+```bash
+gobuster dir -u http://crocodile.htb -w /usr/share/wordlists/raft-large-files.txt -x .bak,.sql,.zip,.tar.gz -t 50 -o crocodile_gobuster_files.txt
+```
+
+4) Usar `ffuf` como alternativa (permite más opciones y filtros):
+
+```bash
+ffuf -u http://wingdata.htb/FUZZ -w /usr/share/wordlists/dirb/common.txt -t 40 -mc 200,301,302,307,403
+```
+
+Consejos para evitar ruido y falsos positivos
+- Empieza con `medium` y `--exclude-length` o inspecciona manualmente resultados `301/302/403`.
+- Observa el código HTTP y la longitud de la respuesta; muchas veces 403s o redirecciones siempre aparecen y no son interesantes.
+- Ajusta `-t` según la estabilidad del servicio (si ves timeouts baja el número de hilos).
+
+Salida y documentación
+- Guarda resultados en `writeups/<machine>/` y revisa manualmente cada ruta relevante con `curl -I` o en el navegador (con Host header correcto si es vhost).
+
+---
+
+Archivo creado: documentation/gobuster.md

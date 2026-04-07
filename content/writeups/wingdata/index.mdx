@@ -1,0 +1,125 @@
+---
+title: "Hack The Box — WingData: Writeup inicial (español)"
+description: "Máquina: WingData"
+date: "2026-03-17"
+tags:
+  - writeup
+tools:
+  []
+---
+# Hack The Box — WingData: Writeup inicial (español)
+
+## Resumen rápido
+
+Máquina: WingData
+
+Estado actual: host accesible por ICMP; puertos abiertos detectados: `22/tcp (SSH)` y `80/tcp (HTTP)`. Acceso web via `wingdata.htb` configurando `/etc/hosts`.
+
+## 1) Reconocimiento — ICMP
+
+- Ping realizado:
+
+```
+PING 10.129.10.22 (10.129.10.22) ...
+4 packets transmitted, 4 received, 0% packet loss
+rtt min/avg/max/mdev = 124.448/166.688/202.604/32.101 ms
+```
+
+- Interpretación: latencia moderada (120–200 ms) y algo de jitter, pero respuesta consistente. Recomenda empezar con `-T3` y subir a `-T4` si todo es estable.
+
+## 2) Escaneo con Nmap
+
+- Comando usado:
+
+```
+nmap -T4 -sC -sV -vv -oN wingdata_nmap.txt 10.129.10.22 | tee wingdata_nmap.stdout.txt
+```
+
+- Resultado relevante (resumen):
+
+```
+Host is up, received syn-ack (0.16s latency).
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u7
+80/tcp open  http    Apache httpd 2.4.66
+Not shown: 998 filtered tcp ports (no-response)
+```
+
+- Notas:
+  - SSH: banner OpenSSH 9.2p1 (típico punto de acceso para enumeración de usuarios, claves válidas y posible acceso por credenciales débiles).
+  - HTTP: Apache 2.4.66; el servidor responde pero necesitábamos resolver el hostname virtual para ver el contenido.
+
+## 3) Acceso web y /etc/hosts
+
+- Intento inicial de conectar al puerto 80 falló hasta que se añadió el hostname a `/etc/hosts`.
+
+- Comando para añadir temporalmente el host (ejemplo):
+
+```bash
+echo "10.129.10.22 wingdata.htb" | sudo tee -a /etc/hosts
+```
+
+- Comprobación HTTP:
+
+```bash
+curl -I http://wingdata.htb
+```
+
+- Resultado: respuesta HTTP 200 y contenido HTML cargado (sitio accesible al resolver el vhost).
+
+## 4) Observaciones iniciales y siguientes pasos
+
+- Lo hecho:
+  - Ping: verificado conectividad y latencia.
+  - Nmap: descubierto SSH y HTTP.
+  - Hosts: configurado `wingdata.htb` para acceder al sitio y obtener HTML.
+
+- Prioridad inmediata (siguientes acciones recomendadas):
+  1. Enumeración web: revisar página, ver fuente, buscar archivos sensibles, `robots.txt` y meta-data.
+  2. Fuerza bruta de directorios/archivo con `gobuster` para descubrir paneles, backups o endpoints ocultos.
+  3. Escaneo de vulnerabilidades web (nikto) y ejecución de scripts NSE relevantes para HTTP (`http-enum`, `http-vuln-*`).
+  4. Enumeración SSH: comprobar posibles usuarios y autenticación por claves (si encuentras usuarios en la web o ficheros de configuración).
+  5. Si se obtiene un punto de entrada web, buscar credenciales o vectores para leer archivos en el sistema (`LOAD_FILE` no aplica aquí, pero buscar config con credenciales).
+
+## 5) Comandos útiles (plantilla reproducible)
+
+- Reconocimiento y nmap (ya ejecutado):
+
+```bash
+ping -c 4 10.129.10.22
+sudo nmap -T3 -sS --top-ports 1000 -sC -sV -oN wingdata_top1000 10.129.10.22
+sudo nmap -T4 -sS -p- -sC -sV -oA wingdata_full 10.129.10.22
+```
+
+- Acceso web y enumeración básica:
+
+```bash
+echo "10.129.10.22 wingdata.htb" | sudo tee -a /etc/hosts
+curl -I http://wingdata.htb
+curl http://wingdata.htb | sed -n '1,200p'
+gobuster dir -u http://wingdata.htb -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 40 -o wingdata_gobuster.txt
+nikto -h http://wingdata.htb -output nikto_wingdata.txt
+```
+
+- SSH checks:
+
+```bash
+nmap -p 22 --script ssh-auth-methods,ssh-hostkey 10.129.10.22
+ssh -v user@10.129.10.22
+```
+
+## 6) Documentación y evidencia
+
+- Guarda siempre:
+  - `wingdata_nmap.txt` (salida nmap)
+  - `wingdata_gobuster.txt` (descubrimiento de rutas)
+  - `wingdata_http_raw.html` (copia del index)
+  - `nikto_wingdata.txt` (detector de vulnerabilidades)
+
+## 7) Notas de seguridad y comportamiento ético
+
+- Solo ejecutar estas pruebas en entornos autorizados (HTB/VMs). No realizar fuerza bruta destructiva sin permiso.
+
+---
+
+Archivo creado: writeups/WingData_WRITEUP.md

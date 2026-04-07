@@ -1,0 +1,79 @@
+---
+title: "Facts — Investigación y teoría (español)"
+description: "Este archivo explica los conceptos, herramientas y la teoría necesaria para comprender las técnicas usadas en el writeup de la máquina Facts."
+date: "2026-03-17"
+tags:
+  - writeup
+  - research
+tools:
+  []
+---
+# Facts — Investigación y teoría (español)
+
+Este archivo explica los conceptos, herramientas y la teoría necesaria para comprender las técnicas usadas en el writeup de la máquina Facts.
+
+## 1) Enumeración de web y fuerza bruta de rutas (Gobuster)
+
+- Gobuster es una herramienta para descubrir recursos en aplicaciones web (directorios, ficheros, vhosts) mediante fuerza bruta con wordlists.
+- Comando típico:
+
+```
+gobuster dir -u http://<IP>/ -w /ruta/a/wordlist.txt -t 40 -o gobuster.txt
+```
+
+- Recomendaciones: usar wordlists actualizadas, múltiples extensiones (`-x php,txt,html`) y ajustar el número de hilos (`-t`) según la estabilidad del servicio.
+
+## 2) Cameleon CMS y CVE
+
+- Los CMS suelen tener vulnerabilidades conocidas (CVE). Antes de explotar, es importante:
+  - Identificar la versión del CMS.
+  - Revisar CVE públicos y PoC (proof-of-concept).
+
+- En este caso se identificaron CVE que permitían lectura arbitraria de archivos y cambios en roles/roles rewrite. Para explotar lecturas, los PoC a menudo requieren autenticar y obtener token CSRF.
+
+## 3) Lectura de archivos remotos tras autenticación
+
+- Muchas vulnerabilidades permiten leer archivos del sistema si la aplicación procesa rutas relativas/absolutas sin sanitizar.
+- Cuando el exploit requiere autenticación, normalmente se automatiza:
+  1. Login (con credenciales creadas desde el panel).
+  2. Recuperar token CSRF si aplica.
+  3. Enviar petición con payload apuntando al fichero deseado.
+
+## 4) Cracking de passphrases de claves SSH (ssh2john + John)
+
+- Si una clave privada SSH está cifrada con una passphrase, John the Ripper puede intentar romperla usando wordlists.
+- Pasos:
+  1. Convertir la clave a formato legible por John: `ssh2john.py id_ed25519 > id.hash`.
+  2. Ejecutar `john --wordlist=/path/rockyou.txt id.hash`.
+  3. Si se obtiene la passphrase, usar la clave con `ssh -i`.
+
+## 5) `sudo` y vectores de escalada (NOPASSWD + binarios explotables)
+
+- `sudo -l` permite ver qué comandos puede ejecutar un usuario con `sudo` y si requiere contraseña.
+- Cuando un binario es ejecutable por `sudo` sin contraseña y admite cargar módulos externos, opciones `--custom-dir`, `--load-path`, o variables de entorno pueden ser vectores de ejecución arbitraria.
+- Buenas prácticas: evitar NOPASSWD para comandos que puedan cargar código o datos externos; restringir rutas; usar políticas de AppArmor/SELinux.
+
+## 6) Facter (Puppet) y explotación vía `--custom-dir`
+
+- `facter` es una utilidad Ruby/Perl vinculada a Puppet que recoge información del sistema (facts).
+- Algunas versiones permiten especificar dirs de módulos personalizados (`--custom-dir`) que serán cargados; si `facter` se ejecuta como root (por sudo), se puede cargar un archivo Ruby que ejecute código arbitrario.
+- Explicar el exploit: crear un `shell.rb` que defina un fact cuyo `setcode` ejecuta un shell; luego ejecutar `sudo facter --custom-dir=/tmp/custom shell`.
+
+## 7) Uso responsable y mitigación
+
+- Nunca ejecutar exploits contra sistemas que no sean entornos de laboratorio o que no tengas permiso para testear.
+- Mitigaciones generales:
+  - Mantener software actualizado.
+  - Revisar permisos sudo y eliminar NOPASSWD cuando no sea necesario.
+  - Validar entradas de usuario y sanitizar rutas de archivo.
+
+## 8) Recursos y lectura adicional
+
+- John the Ripper: https://www.openwall.com/john/
+- Gobuster: https://github.com/OJ/gobuster
+- Información sobre `facter` y Puppet: https://puppet.com/docs
+- Referencia del writeup usado como guía: https://medium.com/@orisimantov7/hackthebox-facts-machine-write-up-e5ed4feea83e
+
+---
+
+Archivo creado: writeups/Facts_RESEARCH.md

@@ -1,0 +1,205 @@
+---
+title: "AWS CLI — Uso rápido para S3"
+description: "Resumen"
+category: "Imported Documentation"
+tags:
+  - documentation
+  - notebook
+  - awscli
+---
+# AWS CLI — Uso rápido para S3
+
+Resumen
+- `awscli` es la herramienta oficial de AWS para interactuar con servicios (S3, EC2, IAM, etc.) desde la línea de comandos.
+
+Instalación
+- Debian/Ubuntu (apt):
+
+```bash
+sudo apt update
+sudo apt install awscli -y
+```
+
+- Pip (virtualenv/pipx recomendado):
+
+```bash
+python3 -m pip install --user awscli
+# o con pipx: pipx install awscli
+```
+
+- macOS (brew):
+
+```bash
+brew install awscli
+```
+
+Configuración inicial
+
+```bash
+aws configure
+# se pedirá: AWS Access Key ID, AWS Secret Access Key, region, output
+```
+
+Nota: para pruebas contra servicios S3 no-AWS (o instancias que responden en una IP), no hace falta configurar credenciales si usas acceso anónimo (`--no-sign-request`) o puedes usar `--profile` con credenciales adecuadas.
+
+aws configure — qué hace y cómo usarlo
+
+`aws configure` es una utilidad interactiva que guarda credenciales y opciones por defecto en `~/.aws/credentials` y `~/.aws/config`.
+
+Campos que solicita:
+- **AWS Access Key ID**: identificador de la clave de acceso (opcional si usarás acceso anónimo).
+- **AWS Secret Access Key**: clave secreta asociada (opcional si usarás `--no-sign-request`).
+- **Default region name**: región por defecto (ej. `us-east-1`). No es siempre necesaria para S3 locales, pero algunas APIs la requieren.
+- **Default output format**: formato de salida por defecto (`json`, `text`, `table`).
+
+Uso práctico y alternativas:
+- Crear o editar un perfil concreto:
+
+```bash
+aws configure --profile s3local
+```
+
+- Ver configuración actual:
+
+```bash
+aws configure list
+aws configure list-profiles
+```
+
+- Fijar valores sin modo interactivo:
+
+```bash
+aws configure set region us-east-1 --profile s3local
+aws configure set aws_access_key_id ABC123 --profile s3local
+aws configure set aws_secret_access_key DEF456 --profile s3local
+```
+
+- Uso de variables de entorno (útil para scripts temporales):
+
+```bash
+export AWS_ACCESS_KEY_ID=ABC123
+export AWS_SECRET_ACCESS_KEY=DEF456
+export AWS_DEFAULT_REGION=us-east-1
+# o para usar un perfil concreto
+export AWS_PROFILE=s3local
+```
+
+Estructura de archivos (~/.aws)
+- `~/.aws/credentials` — almacena claves por perfil:
+
+```
+[default]
+aws_access_key_id = ABC123
+aws_secret_access_key = DEF456
+
+[s3local]
+aws_access_key_id = AAA
+aws_secret_access_key = BBB
+```
+
+- `~/.aws/config` — configura región y formato, y perfiles con el prefijo `profile`:
+
+```
+[default]
+region = us-east-1
+output = json
+
+[profile s3local]
+region = us-east-1
+output = json
+```
+
+Consejos rápidos
+- Para endpoints S3 locales o no públicos, puedes combinar `--endpoint-url` y un perfil o `--no-sign-request` para pruebas anónimas.
+- Evita guardar credenciales en repositorios o en sistemas compartidos; usa perfiles o variables de entorno temporales.
+
+
+Comandos básicos para S3
+
+- Listar buckets (o comprobar acceso anónimo):
+
+```bash
+aws s3 ls
+# anónimo / endpoint custom:
+aws s3 ls --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+- Listar objetos de un bucket:
+
+```bash
+aws s3 ls s3://nombre-bucket --recursive
+aws s3 ls s3://s3.thetoppers.htb --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+- Descargar un objeto:
+
+```bash
+aws s3 cp s3://bucket/ruta/objeto ./localfile
+aws s3 cp s3://s3.thetoppers.htb/file.txt ./file.txt --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+- Subir un objeto:
+
+```bash
+aws s3 cp ./localfile s3://bucket/ruta/ --acl private
+```
+
+- Sincronizar (descarga o subida en masa):
+
+```bash
+aws s3 sync s3://bucket/ ./localdir --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+Comandos con `s3api` (más control, JSON):
+
+```bash
+aws s3api list-buckets
+aws s3api list-objects --bucket s3.thetoppers.htb --endpoint-url http://10.129.59.197 --no-sign-request
+aws s3api get-object --bucket s3.thetoppers.htb --key path/to/object localfile --endpoint-url http://10.129.59.197 --no-sign-request
+aws s3api head-object --bucket s3.thetoppers.htb --key path/to/object --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+Interacción contra un endpoint S3 custom (p.ej. servicio que responde en 10.129.59.197)
+
+- Cuando el servicio no es el AWS público, añade `--endpoint-url` apuntando a la IP/URL del servicio.
+- Si el servicio no usa certificados válidos, añade `--no-verify-ssl` en sistemas que lo permitan (o usa `curl`/`openssl` para inspección previa).
+- Para peticiones anónimas (sin credenciales), añade `--no-sign-request`.
+
+Ejemplos:
+
+```bash
+# Listar buckets anónimamente en endpoint local
+aws s3 ls --endpoint-url http://10.129.59.197 --no-sign-request
+
+# Listar objetos de un bucket virtual-host style
+aws s3api list-objects --bucket s3.thetoppers.htb --endpoint-url http://10.129.59.197 --no-sign-request
+
+# Descargar todos los objetos de un bucket
+aws s3 sync s3://s3.thetoppers.htb ./s3_backup --endpoint-url http://10.129.59.197 --no-sign-request
+```
+
+Consejos prácticos
+- Si el servicio usa Virtual Hosted–style (Host header = `bucket.s3.example.com`) y no responde por DNS público, usa `--endpoint-url` y el nombre del bucket con `s3api` como en los ejemplos anteriores.
+- Si necesitas forzar el Host header en pruebas puntuales, `curl` puede ayudar a inspeccionar respuestas HTTP:
+
+```bash
+curl -I -H "Host: s3.thetoppers.htb" http://10.129.59.197:80
+openssl s_client -connect 10.129.59.197:443 -servername s3.thetoppers.htb
+```
+
+Alternativas y utilidades complementarias
+- `s3cmd` (CLI clásico para S3)
+- `mc` (MinIO Client) — útil para endpoints S3 compatibles: ejemplo:
+
+```bash
+# instalar mc y añadir alias
+mc alias set local http://10.129.59.197 ACCESSKEY SECRETKEY --api S3v4
+mc ls local/s3.thetoppers.htb
+```
+
+- `curl` / `openssl s_client` para inspección HTTP/TLS detallada.
+
+Seguridad y responsabilidad
+- Estos comandos deben usarse sólo dentro del alcance autorizado. No intentes acceder a recursos ajenos sin permiso.
+
+Archivo: documentation/awscli.md

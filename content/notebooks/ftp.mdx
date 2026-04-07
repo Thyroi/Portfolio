@@ -1,0 +1,90 @@
+---
+title: "FTP para pentesting (guía rápida)"
+description: "Contexto rápido"
+category: "Imported Documentation"
+tags:
+  - documentation
+  - notebook
+  - ftp
+---
+# FTP para pentesting (guía rápida)
+
+Contexto rápido
+- FTP (File Transfer Protocol) es un servicio de transferencia de ficheros que puede permitir acceso anónimo (`anonymous`) si está configurado así. Un FTP anónimo significa que cualquiera puede conectarse y listar/descargar archivos según permisos del servidor.
+- En tu escaneo detectaste `vsftpd 3.0.3` y `ftp-anon: Anonymous FTP login allowed`. Eso significa que puedes conectar sin credenciales y examinar el contenido público.
+
+Comandos básicos (cliente `ftp` clásico y `lftp` más avanzado)
+
+1) Conectar anónimamente:
+
+```bash
+ftp 10.129.10.22
+# cuando pida usuario: anonymous
+# cuando pida password: correo@tu.dom
+```
+
+2) Listar y descargar:
+
+```ftp
+ls
+cd path
+get fichero.txt
+mget *.txt
+```
+
+Con `lftp` (mejor para scripting):
+
+```bash
+lftp -u anonymous,anonymous 10.129.10.22
+lftp> ls
+lftp> mirror --verbose remote_dir local_dir
+```
+
+Qué buscar y por qué es valioso
+- Archivos de configuración (`config.php`, `.env`, `wp-config.php`) que contengan credenciales.
+- Backups (`.sql`, `.zip`, `.tar.gz`) que puedan contener datos o contraseñas.
+- Ficheros `allowed.userlist` / `allowed.userlist.passwd` (como en `crocodile`) suelen indicar listas de usuarios/credenciales — descarga y examina su contenido.
+- Scripts, uploads y logs: pueden contener información útil para escalada o credenciales.
+
+Enumeración y pruebas rápidas
+
+```bash
+# Conectar y listar
+ftp 10.129.10.22
+# o script con lftp
+lftp -u anonymous,anonymous -e 'cls -la; quit' 10.129.10.22
+
+# Descargar ficheros sensibles conocidos
+lftp -u anonymous,anonymous -e 'get allowed.userlist; get allowed.userlist.passwd; quit' 10.129.10.22
+
+# Buscar texto dentro de archivos descargados
+grep -i "password\|passwd\|secret\|key" allowed.userlist* || true
+```
+
+Brute force/Password spraying
+- Si FTP requiere autenticar (no-anónimo), puedes usar `hydra` o `medusa` para fuerza bruta:
+
+```bash
+hydra -L users.txt -P /usr/share/wordlists/rockyou.txt ftp://10.129.10.22 -t 4
+```
+
+- `rockyou.txt` es una wordlist de contraseñas comunes; úsala para ataques de contraseña cuando tengas permiso y como último recurso en laboratorios.
+
+Permisos y riesgos
+- Ten en cuenta las restricciones de permisos: archivos con `rw-r--r--` significan que el dueño puede escribir y otros solo leer; rara vez encontrarás uploads persistentes si el servidor está bien configurado.
+- FTP transmite en texto claro por defecto; si consigues credenciales en texto, podrían haber sido capturadas en tránsito (MITM) si estuvieras en la misma red.
+
+Buenas prácticas al documentar hallazgos
+- Guarda los archivos descargados en `writeups/<machine>/downloads/` y anota comandos exactos.
+- No publiques credenciales reales fuera de tu entorno de práctica.
+
+Ejemplo concreto (Crocodile)
+- FTP anónimo permitido; archivos mostrados:
+  - `allowed.userlist` (33 bytes)
+  - `allowed.userlist.passwd` (62 bytes)
+
+Descarga y revisa esos archivos con `cat` y `grep` — es el primer vector para encontrar credenciales reutilizables.
+
+---
+
+Archivo creado: documentation/ftp.md

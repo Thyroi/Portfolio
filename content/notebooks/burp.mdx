@@ -1,0 +1,26 @@
+---
+title: Burp Suite
+description: Intercept, replay, and compare application behavior during manual testing.
+category: Web Proxy
+tags:
+  - proxy
+  - manual-testing
+  - replay
+---
+
+## Core idea
+
+Use Burp when you need visibility into session flow, headers, and subtle server
+responses that scanners flatten away.
+
+## Useful reminders
+
+- Create a clean project config for each target.
+- Keep repeater tabs named by hypothesis.
+- Save successful requests before mutating them further.
+
+## Common flow
+
+```text
+Proxy -> Target -> Repeater -> Comparer
+```
