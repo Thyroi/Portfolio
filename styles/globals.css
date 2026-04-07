@@ -106,6 +106,14 @@
     @apply text-base leading-8;
   }
 
+  .animate-stack-scroll {
+    animation: stack-scroll 32s linear infinite;
+  }
+
+  .animate-stack-scroll:hover {
+    animation-play-state: paused;
+  }
+
   .prose-shell > :first-child {
     margin-top: 0;
   }
@@ -117,5 +125,14 @@
 
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@keyframes stack-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
