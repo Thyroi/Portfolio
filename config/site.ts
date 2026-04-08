@@ -1,10 +1,39 @@
+const email = 'juan-salgado@upc.edu.co'
+
+const contactEmailQuery = new URLSearchParams({
+  subject: 'Opportunity from your portfolio',
+  body: [
+    'Hi Thyroi,',
+    '',
+    "I found your portfolio and I'd like to talk about a role or collaboration.",
+    '',
+    'Company:',
+    'Role:',
+    'Timeline:',
+    '',
+    'Best,',
+  ].join('\n'),
+}).toString()
+
 export const siteConfig = {
   name: 'Thyroi',
   description:
-    'Developer portfolio and technical blog scaffold for security-focused frontend work.',
-  email: 'hello@example.dev',
+    'Portfolio and security blog focused on frontend systems, practical writeups, and reusable tooling.',
+  email,
+  contactEmailHref: `mailto:${email}?${contactEmailQuery}`,
+  phone: '+57 311 217 3328',
+  phoneHref: 'tel:+573112173328',
+  location: 'Bogota, Colombia',
   heroDescription:
-    'A modern Next.js portfolio paired with a technical blog and tool notebook system. The foundation is built for long-form writeups, reusable security notes, and guided product tours.',
+    'Portfolio and blog focused on frontend engineering, security-minded product work, and practical notes that stay useful beyond the first read.',
+  contactHeadline: 'Open to frontend, platform, and security-focused engineering opportunities.',
+  contactDescription:
+    'I am based in Bogota and available for remote-friendly roles, contract work, and conversations with teams building serious product and engineering systems.',
+  contactFocus: [
+    'Frontend architecture and design systems',
+    'Security-aware product engineering',
+    'Technical writing and developer education',
+  ],
   navItems: [
     { label: 'Home', href: '/#hero' },
     { label: 'Stack', href: '/#stack' },
@@ -58,8 +87,9 @@ export const siteConfig = {
     },
   ],
   contactLinks: [
-    { label: 'Email', href: 'mailto:hello@example.dev' },
-    { label: 'GitHub', href: 'https://github.com/' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
+    { label: 'Email', href: `mailto:${email}?${contactEmailQuery}` },
+    { label: 'Call', href: 'tel:+573112173328' },
+    { label: 'GitHub', href: 'https://github.com/Thyroi' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/ijuansalgado/' },
   ],
 }

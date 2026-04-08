@@ -20,7 +20,7 @@ export function Footer() {
           <Link href="/notebook" className="transition hover:text-slate-950">
             Notebook
           </Link>
-          <a href={`mailto:${siteConfig.email}`} className="transition hover:text-slate-950">
+          <a href={siteConfig.contactEmailHref} className="transition hover:text-slate-950">
             {siteConfig.email}
           </a>
         </div>
